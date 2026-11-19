@@ -75,39 +75,51 @@ function Settings() {
   const [success, setSuccess] = useState('')
 
 
+  const [refreshKey, setRefreshKey] = useState(0)
+
   // Retrieve the provider's saved business hours.
-  const fetchBusinessHours = async () => {
-    try {
-      setLoading(true)
-      setLoadError('')
-      setError('')
-      setSuccess('')
-
-      const data = await getProviderBusinessHours()
-
-      const normalized = normalizeSchedule(
-        data.business_hours
-      )
-
-      setSchedule(normalized)
-      setOriginalSchedule(normalized)
-
-      setIsConfigured(Boolean(data.is_configured))
-
-    } catch (err) {
-      setLoadError(
-        err.response?.data?.message ||
-        'Unable to retrieve business hours. Please try again.'
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
-
-
   useEffect(() => {
-    fetchBusinessHours()
-  }, [])
+    let active = true
+
+    getProviderBusinessHours()
+      .then((data) => {
+        if (!active) return
+
+        const normalized = normalizeSchedule(
+          data.business_hours
+        )
+
+        setSchedule(normalized)
+        setOriginalSchedule(normalized)
+        setIsConfigured(Boolean(data.is_configured))
+      })
+      .catch((err) => {
+        if (!active) return
+
+        setLoadError(
+          err.response?.data?.message ||
+          'Unable to retrieve business hours. Please try again.'
+        )
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [refreshKey])
+
+  // Retry retrieving business hours.
+  const fetchBusinessHours = () => {
+    setLoading(true)
+    setLoadError('')
+    setError('')
+    setSuccess('')
+    setRefreshKey((current) => current + 1)
+  }
 
 
   // Update an individual weekday.
@@ -224,10 +236,10 @@ function Settings() {
         <div className="flex min-h-[60vh] flex-col items-center justify-center">
           <RefreshCw
             size={26}
-            className="animate-spin text-[#647D68]"
+            className="animate-spin text-primary"
           />
 
-          <p className="mt-4 text-sm text-[#777D76]">
+          <p className="mt-4 text-sm text-muted">
             Loading your settings...
           </p>
         </div>
@@ -239,25 +251,25 @@ function Settings() {
   if (loadError) {
     return (
       <DashboardLayout>
-        <div className="rounded-xl border border-[#E7E8E4] bg-white p-8 text-center">
+        <div className="rounded-card border border-border bg-surface p-8 text-center">
 
           <AlertCircle
             size={28}
-            className="mx-auto text-[#777D76]"
+            className="mx-auto text-muted"
           />
 
-          <h2 className="mt-4 font-semibold text-[#202421]">
+          <h2 className="mt-4 font-semibold text-foreground">
             Settings unavailable
           </h2>
 
-          <p className="mt-2 text-sm text-[#777D76]">
+          <p className="mt-2 text-sm text-muted">
             {loadError}
           </p>
 
           <button
             type="button"
             onClick={fetchBusinessHours}
-            className="mt-5 rounded-lg bg-[#647D68] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#526D57]"
+            className="mt-5 rounded-button bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
           >
             Try again
           </button>
@@ -275,15 +287,15 @@ function Settings() {
 
         {/* Page heading */}
         <header>
-          <p className="text-sm text-[#777D76]">
+          <p className="text-sm text-muted">
             Provider workspace
           </p>
 
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#202421]">
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
             Settings
           </h1>
 
-          <p className="mt-2 text-sm text-[#777D76]">
+          <p className="mt-2 text-sm text-muted">
             Manage your business preferences and availability.
           </p>
         </header>
@@ -292,24 +304,24 @@ function Settings() {
         {/* Business hours card */}
         <form
           onSubmit={handleSave}
-          className="max-w-5xl rounded-xl border border-[#E7E8E4] bg-white"
+          className="max-w-5xl rounded-card border border-border bg-surface"
         >
 
           {/* Section heading */}
-          <div className="border-b border-[#E7E8E4] p-6">
+          <div className="border-b border-border p-6">
 
             <div className="flex items-start gap-4">
 
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#EEF2ED] text-[#647D68]">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-button bg-primary-soft text-primary">
                 <Clock size={22} />
               </div>
 
               <div>
-                <h2 className="text-lg font-semibold text-[#202421]">
+                <h2 className="text-lg font-semibold text-foreground">
                   Business hours
                 </h2>
 
-                <p className="mt-1 text-sm leading-relaxed text-[#777D76]">
+                <p className="mt-1 text-sm leading-relaxed text-muted">
                   Set the weekly working hours during which
                   customers can book your services.
                 </p>
@@ -317,7 +329,7 @@ function Settings() {
 
             </div>
 
-            <div className="mt-5 flex items-center gap-2 text-sm text-[#777D76]">
+            <div className="mt-5 flex items-center gap-2 text-sm text-muted">
               <Globe size={16} />
 
               <span>
@@ -332,19 +344,19 @@ function Settings() {
 
             {/* Unconfigured schedule notice */}
             {!isConfigured && (
-              <div className="mb-6 flex items-start gap-3 rounded-lg border border-[#E7E8E4] bg-[#F7F7F5] p-4">
+              <div className="mb-6 flex items-start gap-3 rounded-button border border-border bg-surface-muted p-4">
 
                 <AlertCircle
                   size={19}
-                  className="mt-0.5 shrink-0 text-[#647D68]"
+                  className="mt-0.5 shrink-0 text-primary"
                 />
 
                 <div>
-                  <p className="text-sm font-medium text-[#202421]">
+                  <p className="text-sm font-medium text-foreground">
                     Configure your business hours
                   </p>
 
-                  <p className="mt-1 text-sm text-[#777D76]">
+                  <p className="mt-1 text-sm text-muted">
                     You have not saved a weekly schedule yet.
                     Review the suggested hours below and save
                     them to restrict appointment bookings.
@@ -361,11 +373,11 @@ function Settings() {
               {schedule.map((day) => (
                 <div
                   key={day.day_of_week}
-                  className="grid grid-cols-1 items-center gap-4 border-b border-[#E7E8E4] py-5 lg:grid-cols-[140px_110px_1fr]"
+                  className="grid grid-cols-1 items-center gap-4 border-b border-border py-5 lg:grid-cols-[140px_110px_1fr]"
                 >
 
                   {/* Weekday */}
-                  <p className="text-sm font-medium text-[#202421]">
+                  <p className="text-sm font-medium text-foreground">
                     {DAYS[day.day_of_week]}
                   </p>
 
@@ -387,13 +399,13 @@ function Settings() {
                       }
                       className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
                         day.is_closed
-                          ? 'bg-[#D9DDD8]'
-                          : 'bg-[#647D68]'
+                          ? 'bg-border'
+                          : 'bg-primary'
                       }`}
                     >
 
                       <span
-                        className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                        className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-primary-foreground shadow-sm transition-transform ${
                           day.is_closed
                             ? 'translate-x-0'
                             : 'translate-x-5'
@@ -405,8 +417,8 @@ function Settings() {
                     <span
                       className={`text-sm ${
                         day.is_closed
-                          ? 'text-[#999E98]'
-                          : 'text-[#526D57]'
+                          ? 'text-muted'
+                          : 'text-primary'
                       }`}
                     >
                       {day.is_closed ? 'Closed' : 'Open'}
@@ -418,7 +430,7 @@ function Settings() {
                   {/* Opening and closing times */}
                   {day.is_closed ? (
 
-                    <p className="text-sm text-[#999E98]">
+                    <p className="text-sm text-muted">
                       Not accepting appointments
                     </p>
 
@@ -427,7 +439,7 @@ function Settings() {
                     <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
 
                       <label className="block">
-                        <span className="mb-2 block text-xs text-[#777D76]">
+                        <span className="mb-2 block text-xs text-muted">
                           Opening time
                         </span>
 
@@ -442,16 +454,16 @@ function Settings() {
                               event.target.value
                             )
                           }
-                          className="w-full rounded-lg border border-[#E7E8E4] bg-white px-3 py-2.5 text-sm text-[#202421] outline-none focus:border-[#647D68] focus:ring-2 focus:ring-[#EEF2ED]"
+                          className="w-full rounded-button border border-border bg-surface px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
                         />
                       </label>
 
-                      <span className="pb-3 text-sm text-[#999E98]">
+                      <span className="pb-3 text-sm text-muted">
                         to
                       </span>
 
                       <label className="block">
-                        <span className="mb-2 block text-xs text-[#777D76]">
+                        <span className="mb-2 block text-xs text-muted">
                           Closing time
                         </span>
 
@@ -466,7 +478,7 @@ function Settings() {
                               event.target.value
                             )
                           }
-                          className="w-full rounded-lg border border-[#E7E8E4] bg-white px-3 py-2.5 text-sm text-[#202421] outline-none focus:border-[#647D68] focus:ring-2 focus:ring-[#EEF2ED]"
+                          className="w-full rounded-button border border-border bg-surface px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
                         />
                       </label>
 
@@ -481,7 +493,7 @@ function Settings() {
 
 
             {/* Schedule guidance */}
-            <p className="mt-5 text-xs leading-relaxed text-[#777D76]">
+            <p className="mt-5 text-xs leading-relaxed text-muted">
               Customers can only create appointments that fit
               entirely within your configured working hours.
               Changes do not automatically cancel existing
@@ -493,7 +505,7 @@ function Settings() {
             {error && (
               <div
                 role="alert"
-                className="mt-5 flex items-start gap-3 rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700"
+                className="mt-5 flex items-start gap-3 rounded-button border border-danger/20 bg-danger-soft p-4 text-sm text-danger-text"
               >
                 <AlertCircle size={18} className="shrink-0" />
 
@@ -506,7 +518,7 @@ function Settings() {
             {success && (
               <div
                 role="status"
-                className="mt-5 flex items-start gap-3 rounded-lg border border-[#DCE7DA] bg-[#EEF2ED] p-4 text-sm text-[#526D57]"
+                className="mt-5 flex items-start gap-3 rounded-button border border-border bg-primary-soft p-4 text-sm text-primary"
               >
                 <CheckCircle2
                   size={18}
@@ -521,9 +533,9 @@ function Settings() {
 
 
           {/* Footer actions */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#E7E8E4] p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border p-6">
 
-            <p className="text-xs text-[#777D76]">
+            <p className="text-xs text-muted">
               {hasChanges
                 ? 'You have unsaved changes.'
                 : isConfigured
@@ -537,7 +549,7 @@ function Settings() {
                 type="button"
                 onClick={handleReset}
                 disabled={saving || !hasChanges}
-                className="rounded-lg border border-[#E7E8E4] px-4 py-2.5 text-sm font-medium text-[#777D76] transition-colors hover:bg-[#F7F7F5] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-button border border-border px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Reset
               </button>
@@ -547,7 +559,7 @@ function Settings() {
                 disabled={
                   saving || (isConfigured && !hasChanges)
                 }
-                className="flex items-center gap-2 rounded-lg bg-[#647D68] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#526D57] disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex items-center gap-2 rounded-button bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
 
                 {saving ? (

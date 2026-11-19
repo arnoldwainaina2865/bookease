@@ -39,25 +39,44 @@ function formatDate(date) {
 
 function getStatusStyle(status) {
   const styles = {
-    confirmed: 'bg-blue-50 text-blue-700',
-    pending: 'bg-amber-50 text-amber-700',
-    completed: 'bg-green-50 text-green-700',
-    cancelled: 'bg-red-50 text-red-700',
-    rejected: 'bg-gray-100 text-gray-600',
+    confirmed: 'bg-info-soft text-info-text',
+    pending: 'bg-warning-soft text-warning-text',
+    completed: 'bg-success-soft text-success-text',
+    cancelled: 'bg-danger-soft text-danger-text',
+    rejected: 'bg-surface-muted text-muted',
   }
 
-  return styles[status?.toLowerCase()] || 'bg-gray-100 text-gray-600'
+  return styles[status?.toLowerCase()] || 'bg-surface-muted text-muted'
 }
 
-function StatCard({ label, value, icon: Icon }) {
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  fullWidth = false,
+}) {
   return (
-    <div className="rounded-xl border border-[#E7E8E4] bg-white p-5">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-[#777D76]">{label}</p>
-        <Icon size={19} className="text-[#647D68]" />
+    <div
+      className={`
+        min-w-0 rounded-card border border-border
+        bg-surface p-3 sm:p-5
+        ${fullWidth ? 'col-span-2 xl:col-span-1' : ''}
+      `}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs leading-relaxed text-muted sm:text-sm">
+          {label}
+        </p>
+
+        <Icon
+          size={19}
+          strokeWidth={1.8}
+          className="h-4 w-4 shrink-0 text-primary sm:h-5 sm:w-5"
+          aria-hidden="true"
+        />
       </div>
 
-      <p className="mt-5 text-2xl font-semibold text-[#202421]">
+      <p className="mt-3 break-words text-xl font-semibold tabular-nums text-foreground sm:mt-5 sm:text-2xl">
         {value}
       </p>
     </div>
@@ -69,34 +88,49 @@ function ProviderDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const fetchDashboard = async () => {
-    try {
-      setLoading(true)
-      setError('')
-
-      const data = await getProviderDashboard()
-
-      setDashboard(data)
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        'Unable to load dashboard information. Please try again.'
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
-    fetchDashboard()
-  }, [])
+    let active = true
+
+    getProviderDashboard()
+      .then((data) => {
+        if (!active) return
+
+        setDashboard(data)
+        setError('')
+      })
+      .catch((err) => {
+        if (!active) return
+
+        setError(
+          err.response?.data?.message ||
+          'Unable to load dashboard information. Please try again.'
+        )
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [refreshKey])
+
+  const handleRefresh = () => {
+    setLoading(true)
+    setError('')
+    setRefreshKey((current) => current + 1)
+  }
 
   if (loading) {
     return (
       <DashboardLayout>
         <div className="flex min-h-[60vh] flex-col items-center justify-center">
-          <RefreshCw size={25} className="animate-spin text-[#647D68]" />
-          <p className="mt-4 text-sm text-[#777D76]">
+          <RefreshCw size={25} className="animate-spin text-primary" />
+          <p className="mt-4 text-sm text-muted">
             Loading your dashboard...
           </p>
         </div>
@@ -107,18 +141,18 @@ function ProviderDashboard() {
   if (error) {
     return (
       <DashboardLayout>
-        <div className="rounded-xl border border-[#E7E8E4] bg-white p-8 text-center">
-          <p className="font-medium text-[#202421]">
+        <div className="rounded-card border border-border bg-surface p-8 text-center">
+          <p className="font-medium text-foreground">
             Dashboard unavailable
           </p>
 
-          <p className="mt-2 text-sm text-[#777D76]">
+          <p className="mt-2 text-sm text-muted">
             {error}
           </p>
 
           <button
-            onClick={fetchDashboard}
-            className="mt-5 rounded-lg bg-[#647D68] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#526D57]"
+            onClick={handleRefresh}
+            className="mt-5 rounded-button bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
           >
             Try again
           </button>
@@ -166,6 +200,7 @@ const stats = [
     label: 'Total earnings',
     value: formatCurrency(statistics.total_earnings),
     icon: Wallet,
+    fullWidth: true,
   },
 ]
 
@@ -175,50 +210,51 @@ const stats = [
       <div className="space-y-8">
 
         <header>
-          <p className="text-sm text-[#777D76]">
+          <p className="text-sm text-muted">
             Provider workspace
           </p>
 
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[#202421]">
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
             Dashboard
           </h1>
 
-          <p className="mt-1 text-sm text-[#777D76]">
+          <p className="mt-1 text-sm text-muted">
             Welcome back, {dashboard?.provider?.business_name || 'Provider'}.
             Here's your business overview.
           </p>
         </header>
 
         {/* Statistics */}
-<section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">          {stats.map((stat) => (
+<section className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-4">          {stats.map((stat) => (
             <StatCard
               key={stat.label}
               label={stat.label}
               value={stat.value}
               icon={stat.icon}
+              fullWidth={stat.fullWidth}
             />
           ))}
         </section>
 
         {/* Recent bookings */}
-        <section className="overflow-hidden rounded-xl border border-[#E7E8E4] bg-white">
+        <section className="overflow-hidden rounded-card border border-border bg-surface">
 
-          <div className="flex items-center justify-between border-b border-[#E7E8E4] px-6 py-5">
+          <div className="flex items-center justify-between border-b border-border px-6 py-5">
             <div>
-              <h2 className="font-semibold text-[#202421]">
+              <h2 className="font-semibold text-foreground">
                 Recent bookings
               </h2>
 
-              <p className="mt-1 text-sm text-[#777D76]">
+              <p className="mt-1 text-sm text-muted">
                 Your latest customer bookings
               </p>
             </div>
 
             <button
-              onClick={fetchDashboard}
+              onClick={handleRefresh}
               disabled={loading}
               title="Refresh dashboard"
-              className="rounded-lg border border-[#E7E8E4] p-2 text-[#777D76] hover:bg-[#F7F7F5]"
+              className="rounded-button border border-border p-2 text-muted hover:bg-surface-muted"
             >
               <RefreshCw size={17} />
             </button>
@@ -228,21 +264,66 @@ const stats = [
             <div className="px-6 py-12 text-center">
               <CalendarDays
                 size={28}
-                className="mx-auto text-[#999E98]"
+                className="mx-auto text-muted"
               />
 
-              <p className="mt-3 text-sm font-medium text-[#202421]">
+              <p className="mt-3 text-sm font-medium text-foreground">
                 No recent bookings
               </p>
 
-              <p className="mt-1 text-sm text-[#777D76]">
+              <p className="mt-1 text-sm text-muted">
                 Your bookings will appear here when customers make reservations.
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+              {/* Mobile booking cards */}
+              <div className="space-y-3 p-3 md:hidden">
+                {bookings.map((booking) => (
+                  <article
+                    key={booking.id}
+                    className="rounded-card border border-border bg-surface p-4"
+                  >
+                    <h3 className="break-words text-sm font-semibold text-foreground">
+                      {booking.service?.name ||
+                        booking.service?.title ||
+                        'Service'}
+                    </h3>
+
+                    <p className="mt-2 text-sm text-muted">
+                      {booking.customer?.full_name ||
+                        booking.customer?.name ||
+                        'Customer'}
+                    </p>
+
+                    <div className="mt-2 flex items-center gap-2 text-xs text-muted">
+                      <CalendarDays
+                        size={15}
+                        className="shrink-0"
+                        aria-hidden="true"
+                      />
+                      {formatDate(booking.start_at)}
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                      <p className="font-semibold text-foreground">
+                        {formatCurrency(booking.total_price)}
+                      </p>
+
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${getStatusStyle(booking.status)}`}
+                      >
+                        {booking.status}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              {/* Tablet and desktop booking table */}
+              <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left text-sm">
-                <thead className="bg-[#FAFAF9] text-xs text-[#777D76]">
+                <thead className="bg-surface-muted text-xs text-muted">
                   <tr>
                     <th className="px-6 py-4 font-medium">Customer</th>
                     <th className="px-6 py-4 font-medium">Service</th>
@@ -252,23 +333,23 @@ const stats = [
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-[#E7E8E4]">
+                <tbody className="divide-y divide-border">
                   {bookings.map((booking) => (
-                    <tr key={booking.id} className="hover:bg-[#FAFAF9]">
+                    <tr key={booking.id} className="hover:bg-surface-muted">
 
-                      <td className="whitespace-nowrap px-6 py-4 font-medium text-[#202421]">
+                      <td className="whitespace-nowrap px-6 py-4 font-medium text-foreground">
                         {booking.customer?.full_name ||
                           booking.customer?.name ||
                           'Customer'}
                       </td>
 
-                      <td className="whitespace-nowrap px-6 py-4 text-[#777D76]">
+                      <td className="whitespace-nowrap px-6 py-4 text-muted">
                         {booking.service?.name ||
                           booking.service?.title ||
                           'Service'}
                       </td>
 
-                      <td className="whitespace-nowrap px-6 py-4 text-[#777D76]">
+                      <td className="whitespace-nowrap px-6 py-4 text-muted">
                         {formatDate(booking.start_at)}
                       </td>
 
@@ -280,7 +361,7 @@ const stats = [
                         </span>
                       </td>
 
-                      <td className="whitespace-nowrap px-6 py-4 text-right font-medium text-[#202421]">
+                      <td className="whitespace-nowrap px-6 py-4 text-right font-medium text-foreground">
                         {formatCurrency(booking.total_price)}
                       </td>
 
@@ -288,7 +369,8 @@ const stats = [
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </section>
 

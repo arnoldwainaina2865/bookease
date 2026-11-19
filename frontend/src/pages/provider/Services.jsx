@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Plus,
   Search,
@@ -45,27 +45,76 @@ function Services() {
   const [editingService, setEditingService] = useState(null)
   const [form, setForm] = useState(initialForm)
   const [saving, setSaving] = useState(false)
+  const servicesRequestRef = useRef(0)
 
-  const fetchServices = async () => {
-    setLoading(true)
-    setError('')
+  useEffect(() => {
+    if (!modalOpen) return
 
-    try {
-      const data = await getProviderServices()
-      setServices(data.services || [])
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        'Unable to retrieve your services.'
-      )
-    } finally {
-      setLoading(false)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
     }
-  }
+  }, [modalOpen])
+
+  useEffect(() => {
+    if (!modalOpen) return
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && !saving) {
+        event.preventDefault()
+        setModalOpen(false)
+        setEditingService(null)
+        setForm(initialForm)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [modalOpen, saving])
+
+  const fetchServices = useCallback(() => {
+    const requestId = ++servicesRequestRef.current
+
+    return getProviderServices()
+      .then((data) => {
+        if (requestId !== servicesRequestRef.current) return
+
+        setServices(data.services || [])
+      })
+      .catch((err) => {
+        if (requestId !== servicesRequestRef.current) return
+
+        setError(
+          err.response?.data?.message ||
+          'Unable to retrieve your services.'
+        )
+      })
+      .finally(() => {
+        if (requestId === servicesRequestRef.current) {
+          setLoading(false)
+        }
+      })
+  }, [])
 
   useEffect(() => {
     fetchServices()
-  }, [])
+
+    return () => {
+      servicesRequestRef.current += 1
+    }
+  }, [fetchServices])
+
+  const refreshServices = () => {
+    setLoading(true)
+    setError('')
+
+    return fetchServices()
+  }
 
   const openCreateModal = () => {
     setEditingService(null)
@@ -161,7 +210,7 @@ function Services() {
       setEditingService(null)
       setForm(initialForm)
 
-      await fetchServices()
+      await refreshServices()
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -185,7 +234,7 @@ function Services() {
     try {
       await deactivateProviderService(service.id)
       setSuccess(`${service.name} has been deactivated.`)
-      await fetchServices()
+      await refreshServices()
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -204,7 +253,7 @@ function Services() {
       })
 
       setSuccess(`${service.name} has been activated.`)
-      await fetchServices()
+      await refreshServices()
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -235,11 +284,11 @@ function Services() {
         {/* Page heading */}
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-[#202421]">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               Services
             </h1>
 
-            <p className="mt-1 text-sm text-[#777D76]">
+            <p className="mt-1 text-sm text-muted">
               Manage the services your business offers.
             </p>
           </div>
@@ -247,7 +296,7 @@ function Services() {
           <button
             type="button"
             onClick={openCreateModal}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#647D68] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#526D57]"
+            className="inline-flex items-center justify-center gap-2 rounded-button bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             <Plus size={17} />
             Add service
@@ -256,86 +305,87 @@ function Services() {
 
         {/* Feedback */}
         {error && !modalOpen && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-button border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger-text">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="rounded-lg border border-[#DCE6DC] bg-[#F0F5F0] px-4 py-3 text-sm text-[#526D57]">
+          <div className="rounded-button border border-border bg-primary-soft px-4 py-3 text-sm text-primary">
             {success}
           </div>
         )}
 
         {/* Summary cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-[#E7E8E4] bg-white p-5">
-            <p className="text-sm text-[#777D76]">Total services</p>
-            <p className="mt-2 text-2xl font-semibold text-[#202421]">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="min-w-0 rounded-card border border-border bg-surface p-3 sm:p-5">
+            <p className="text-xs leading-relaxed text-muted sm:text-sm">Total services</p>
+            <p className="mt-2 text-xl font-semibold tabular-nums sm:text-2xl text-foreground">
               {services.length}
             </p>
           </div>
 
-          <div className="rounded-xl border border-[#E7E8E4] bg-white p-5">
-            <p className="text-sm text-[#777D76]">Active services</p>
-            <p className="mt-2 text-2xl font-semibold text-[#526D57]">
+          <div className="min-w-0 rounded-card border border-border bg-surface p-3 sm:p-5">
+            <p className="text-xs leading-relaxed text-muted sm:text-sm">Active services</p>
+            <p className="mt-2 text-xl font-semibold tabular-nums sm:text-2xl text-primary">
               {activeCount}
             </p>
           </div>
 
-          <div className="rounded-xl border border-[#E7E8E4] bg-white p-5">
-            <p className="text-sm text-[#777D76]">Inactive services</p>
-            <p className="mt-2 text-2xl font-semibold text-[#777D76]">
+          <div className="min-w-0 rounded-card border border-border bg-surface p-3 sm:p-5">
+            <p className="text-xs leading-relaxed text-muted sm:text-sm">Inactive services</p>
+            <p className="mt-2 text-xl font-semibold tabular-nums sm:text-2xl text-muted">
               {inactiveCount}
             </p>
           </div>
         </div>
 
         {/* Services table */}
-        <section className="overflow-hidden rounded-xl border border-[#E7E8E4] bg-white">
+        <section className="overflow-hidden rounded-card border border-border bg-surface">
 
-          <div className="flex flex-col justify-between gap-4 border-b border-[#E7E8E4] px-6 py-5 sm:flex-row sm:items-center">
+          <div className="flex flex-col justify-between gap-4 border-b border-border px-6 py-5 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-base font-semibold text-[#202421]">
+              <h2 className="text-base font-semibold text-foreground">
                 Your services
               </h2>
 
-              <p className="mt-1 text-xs text-[#999E98]">
+              <p className="mt-1 text-xs text-muted">
                 Manage pricing, duration and availability.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 rounded-lg border border-[#E7E8E4] px-3">
-              <Search size={17} className="text-[#999E98]" />
+            <div className="flex items-center gap-2 rounded-button border border-border px-3">
+              <Search size={17} className="text-muted" />
 
               <input
                 type="text"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search services..."
-                className="w-full py-2.5 text-sm outline-none sm:w-52"
+                aria-label="Search services"
+                className="bg-surface text-foreground placeholder:text-muted w-full py-2.5 text-sm outline-none sm:w-52"
               />
             </div>
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center gap-3 py-16 text-sm text-[#777D76]">
+            <div className="flex items-center justify-center gap-3 py-16 text-sm text-muted">
               <LoaderCircle size={19} className="animate-spin" />
               Loading services...
             </div>
           ) : filteredServices.length === 0 ? (
             <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F0F2EE] text-[#647D68]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-card bg-surface-muted text-primary">
                 <BriefcaseBusiness size={22} />
               </div>
 
-              <h3 className="mt-4 text-sm font-semibold text-[#202421]">
+              <h3 className="mt-4 text-sm font-semibold text-foreground">
                 {services.length === 0
                   ? 'No services yet'
                   : 'No matching services'}
               </h3>
 
-              <p className="mt-2 max-w-sm text-sm text-[#777D76]">
+              <p className="mt-2 max-w-sm text-sm text-muted">
                 {services.length === 0
                   ? 'Add your first service to start managing what your business offers.'
                   : 'Try searching with a different service name.'}
@@ -345,7 +395,7 @@ function Services() {
                 <button
                   type="button"
                   onClick={openCreateModal}
-                  className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#647D68] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#526D57]"
+                  className="mt-5 inline-flex items-center gap-2 rounded-button bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
                 >
                   <Plus size={16} />
                   Add your first service
@@ -353,15 +403,90 @@ function Services() {
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[750px] text-left">
-                <thead className="bg-[#FAFAF8]">
+            <>
+              {/* Mobile service cards */}
+              <div className="grid gap-3 p-3 sm:grid-cols-2 lg:hidden">
+                {filteredServices.map((service) => (
+                  <article
+                    key={service.id}
+                    className="flex min-w-0 flex-col rounded-card border border-border bg-surface p-4"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="min-w-0 break-words text-sm font-semibold text-foreground">
+                        {service.name}
+                      </h3>
+
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+                          service.is_active
+                            ? 'bg-primary-soft text-primary'
+                            : 'bg-surface-muted text-muted'
+                        }`}
+                      >
+                        {service.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+
+                    <p className="mt-2 break-words text-sm leading-relaxed text-muted">
+                      {service.description || 'No description provided'}
+                    </p>
+
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-lg font-semibold text-foreground">
+                        {formatCurrency(service.price)}
+                      </p>
+
+                      <div className="flex items-center gap-1.5 text-xs text-muted">
+                        <Clock3 size={15} aria-hidden="true" />
+                        {service.duration_minutes} min
+                      </div>
+                    </div>
+
+                    <div className="mt-auto">
+                      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-4">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(service)}
+                          aria-label={`Edit ${service.name}`}
+                          className="flex min-h-11 items-center justify-center gap-2 rounded-button border border-border px-2 py-2.5 text-xs font-medium text-primary hover:bg-primary-soft"
+                        >
+                          <Pencil size={15} aria-hidden="true" />
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            service.is_active
+                              ? handleDeactivate(service)
+                              : handleActivate(service)
+                          }
+                          aria-label={`${service.is_active ? 'Deactivate' : 'Activate'} ${service.name}`}
+                          className={`flex min-h-11 items-center justify-center gap-1.5 rounded-button px-2 py-2.5 text-xs font-medium transition-colors ${
+                            service.is_active
+                              ? 'bg-danger-soft text-danger-text'
+                              : 'bg-primary-soft text-primary'
+                          }`}
+                        >
+                          <Power size={15} aria-hidden="true" />
+                          {service.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              {/* Desktop services table */}
+              <div className="hidden overflow-x-auto lg:block">
+                <table className="w-full min-w-[750px] text-left">
+                <thead className="bg-surface-muted">
                   <tr>
                     {['Service', 'Price', 'Duration', 'Status', 'Actions'].map(
                       (heading) => (
                         <th
                           key={heading}
-                          className="px-6 py-4 text-xs font-semibold text-[#777D76]"
+                          className="px-6 py-4 text-xs font-semibold text-muted"
                         >
                           {heading}
                         </th>
@@ -370,28 +495,28 @@ function Services() {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-[#E7E8E4]">
+                <tbody className="divide-y divide-border">
                   {filteredServices.map((service) => (
                     <tr
                       key={service.id}
-                      className="transition-colors hover:bg-[#FAFAF8]"
+                      className="transition-colors hover:bg-surface-muted"
                     >
                       <td className="px-6 py-4">
-                        <p className="text-sm font-medium text-[#202421]">
+                        <p className="text-sm font-medium text-foreground">
                           {service.name}
                         </p>
 
-                        <p className="mt-1 max-w-xs truncate text-xs text-[#999E98]">
+                        <p className="mt-1 max-w-xs truncate text-xs text-muted">
                           {service.description || 'No description provided'}
                         </p>
                       </td>
 
-                      <td className="px-6 py-4 text-sm font-medium text-[#202421]">
+                      <td className="px-6 py-4 text-sm font-medium text-foreground">
                         {formatCurrency(service.price)}
                       </td>
 
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-sm text-[#777D76]">
+                        <div className="flex items-center gap-2 text-sm text-muted">
                           <Clock3 size={15} />
                           {service.duration_minutes} min
                         </div>
@@ -401,8 +526,8 @@ function Services() {
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
                             service.is_active
-                              ? 'bg-[#EEF2ED] text-[#526D57]'
-                              : 'bg-[#F0F0EE] text-[#777D76]'
+                              ? 'bg-primary-soft text-primary'
+                              : 'bg-surface-muted text-muted'
                           }`}
                         >
                           {service.is_active ? 'Active' : 'Inactive'}
@@ -415,7 +540,7 @@ function Services() {
                             type="button"
                             onClick={() => openEditModal(service)}
                             title="Edit service"
-                            className="rounded-lg border border-[#E7E8E4] p-2 text-[#777D76] transition-colors hover:bg-[#F0F2EE] hover:text-[#526D57]"
+                            className="rounded-button border border-border p-2 text-muted transition-colors hover:bg-surface-muted hover:text-primary"
                           >
                             <Pencil size={15} />
                           </button>
@@ -425,7 +550,7 @@ function Services() {
                               type="button"
                               onClick={() => handleDeactivate(service)}
                               title="Deactivate service"
-                              className="rounded-lg border border-[#E7E8E4] p-2 text-[#777D76] transition-colors hover:bg-red-50 hover:text-red-600"
+                              className="rounded-button border border-border p-2 text-muted transition-colors hover:bg-danger-soft hover:text-danger-text"
                             >
                               <Power size={15} />
                             </button>
@@ -434,7 +559,7 @@ function Services() {
                               type="button"
                               onClick={() => handleActivate(service)}
                               title="Activate service"
-                              className="rounded-lg border border-[#E7E8E4] px-3 py-2 text-xs font-medium text-[#526D57] transition-colors hover:bg-[#EEF2ED]"
+                              className="rounded-button border border-border px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary-soft"
                             >
                               Activate
                             </button>
@@ -444,8 +569,9 @@ function Services() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+                </table>
+              </div>
+            </>
           )}
         </section>
       </div>
@@ -453,20 +579,25 @@ function Services() {
       {/* Create / Edit modal */}
       {modalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 backdrop-blur-sm sm:p-6"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) closeModal()
           }}
         >
-          <div className="w-full max-w-lg rounded-2xl border border-[#E7E8E4] bg-white shadow-xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="service-modal-title"
+            className="flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-card border border-border bg-surface shadow-elevated"
+          >
 
-            <div className="flex items-center justify-between border-b border-[#E7E8E4] px-6 py-5">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-4 sm:px-6">
               <div>
-                <h2 className="text-lg font-semibold text-[#202421]">
+                <h2 id="service-modal-title" className="text-lg font-semibold text-foreground">
                   {editingService ? 'Edit service' : 'Add a service'}
                 </h2>
 
-                <p className="mt-1 text-xs text-[#777D76]">
+                <p className="mt-1 text-xs text-muted">
                   Enter the details of your service below.
                 </p>
               </div>
@@ -474,97 +605,102 @@ function Services() {
               <button
                 type="button"
                 onClick={closeModal}
-                className="rounded-lg p-2 text-[#777D76] hover:bg-[#F7F7F5]"
+                disabled={saving}
+                aria-label="Close service form"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-button border border-border text-muted hover:bg-surface-muted disabled:opacity-50"
               >
                 <X size={19} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5 p-6">
+            <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
 
               {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="rounded-button border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger-text">
                   {error}
                 </div>
               )}
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#202421]">
+                <label htmlFor="service-name" className="mb-2 block text-sm font-medium text-foreground">
                   Service name
                 </label>
 
                 <input
-                  name="name"
+                  id="service-name" name="name"
                   value={form.name}
                   onChange={handleChange}
                   placeholder="e.g. Haircut"
                   maxLength={150}
                   required
-                  className="w-full rounded-lg border border-[#E7E8E4] px-3 py-3 text-sm outline-none transition-colors focus:border-[#647D68]"
+                  className="bg-surface text-foreground placeholder:text-muted w-full rounded-button border border-border px-3 py-3 text-sm outline-none transition-colors focus:border-primary"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#202421]">
+                <label htmlFor="service-description" className="mb-2 block text-sm font-medium text-foreground">
                   Description
-                  <span className="ml-1 font-normal text-[#999E98]">
+                  <span className="ml-1 font-normal text-muted">
                     (Optional)
                   </span>
                 </label>
 
                 <textarea
-                  name="description"
+                  id="service-description" name="description"
                   value={form.description}
                   onChange={handleChange}
                   rows={3}
                   placeholder="Describe what this service includes..."
-                  className="w-full resize-none rounded-lg border border-[#E7E8E4] px-3 py-3 text-sm outline-none transition-colors focus:border-[#647D68]"
+                  className="bg-surface text-foreground placeholder:text-muted w-full resize-none rounded-button border border-border px-3 py-3 text-sm outline-none transition-colors focus:border-primary"
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-[#202421]">
+                  <label htmlFor="service-price" className="mb-2 block text-sm font-medium text-foreground">
                     Price (KSh)
                   </label>
 
                   <input
                     type="number"
-                    name="price"
+                    id="service-price" name="price"
                     value={form.price}
                     onChange={handleChange}
                     min="0"
                     step="0.01"
                     placeholder="500"
                     required
-                    className="w-full rounded-lg border border-[#E7E8E4] px-3 py-3 text-sm outline-none focus:border-[#647D68]"
+                    className="bg-surface text-foreground placeholder:text-muted w-full rounded-button border border-border px-3 py-3 text-sm outline-none focus:border-primary"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-[#202421]">
+                  <label htmlFor="service-duration_minutes" className="mb-2 block text-sm font-medium text-foreground">
                     Duration (minutes)
                   </label>
 
                   <input
                     type="number"
-                    name="duration_minutes"
+                    id="service-duration_minutes" name="duration_minutes"
                     value={form.duration_minutes}
                     onChange={handleChange}
                     min="1"
                     step="1"
                     required
-                    className="w-full rounded-lg border border-[#E7E8E4] px-3 py-3 text-sm outline-none focus:border-[#647D68]"
+                    className="bg-surface text-foreground placeholder:text-muted w-full rounded-button border border-border px-3 py-3 text-sm outline-none focus:border-primary"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-[#E7E8E4] pt-5">
+              </div>
+
+              <div className="grid shrink-0 grid-cols-2 gap-3 border-t border-border bg-surface px-4 py-4 sm:px-6">
                 <button
                   type="button"
                   onClick={closeModal}
                   disabled={saving}
-                  className="rounded-lg border border-[#E7E8E4] px-4 py-2.5 text-sm font-medium text-[#777D76] hover:bg-[#F7F7F5] disabled:opacity-50"
+                  className="rounded-button border border-border px-4 py-2.5 text-sm font-medium text-muted hover:bg-surface-muted disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -572,7 +708,7 @@ function Services() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#647D68] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#526D57] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-button bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving && (
                     <LoaderCircle size={16} className="animate-spin" />

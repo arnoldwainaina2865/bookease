@@ -1,53 +1,265 @@
 
 @import "tailwindcss";
 
-/* BookEase — Global Design System */
+/* ==================================================
+   BOOKEASE DESIGN SYSTEM
+   Organic Wellness & Spa
+   ================================================== */
+
+/* --------------------------------------------------
+   1. LIGHT THEME
+   -------------------------------------------------- */
 
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color-scheme: light;
 
-  color: #202421;
-  background: #F7F7F5;
+  /* Backgrounds and surfaces */
+  --be-background: #FAF8F5;
+  --be-surface: #FFFFFF;
+  --be-surface-muted: #F0ECE4;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Typography */
+  --be-foreground: #1E2421;
+  --be-muted: #5C6660;
+
+  /* Brand colors */
+  --be-primary: #234E3D;
+  --be-primary-hover: #193C2E;
+  --be-primary-foreground: #FFFFFF;
+  --be-primary-soft: #E4EDE6;
+  --be-accent: #C87A55;
+
+  /* Borders and focus */
+  --be-border: #E6E1D8;
+  --be-focus: #234E3D;
+
+  /* Semantic colors */
+  --be-success: #16A34A;
+  --be-success-soft: #DCFCE7;
+  --be-success-text: #166534;
+
+  --be-warning: #B45309;
+  --be-warning-soft: #FEF3C7;
+  --be-warning-text: #92400E;
+
+  --be-danger: #B91C1C;
+  --be-danger-soft: #FEE2E2;
+  --be-danger-text: #991B1B;
+
+  --be-info: #2563EB;
+  --be-info-soft: #DBEAFE;
+  --be-info-text: #1E40AF;
+
+  /* Shadows */
+  --be-shadow-card:
+    0 2px 8px rgb(30 36 33 / 0.04),
+    0 8px 24px rgb(30 36 33 / 0.04);
+
+  --be-shadow-elevated:
+    0 12px 32px rgb(30 36 33 / 0.12);
 }
 
-* {
-  box-sizing: border-box;
+/* --------------------------------------------------
+   2. DARK THEME
+   -------------------------------------------------- */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Backgrounds and surfaces */
+  --be-background: #121815;
+  --be-surface: #1C2520;
+  --be-surface-muted: #26332B;
+
+  /* Typography */
+  --be-foreground: #F0F2EE;
+  --be-muted: #A4B2A9;
+
+  /* Brand colors */
+  --be-primary: #A3C5AE;
+  --be-primary-hover: #B8D6C1;
+  --be-primary-foreground: #14251B;
+  --be-primary-soft: #2C4033;
+  --be-accent: #D99B7C;
+
+  /* Borders and focus */
+  --be-border: #34423A;
+  --be-focus: #A3C5AE;
+
+  /* Semantic colors */
+  --be-success: #4ADE80;
+  --be-success-soft: #173824;
+  --be-success-text: #86EFAC;
+
+  --be-warning: #FBBF24;
+  --be-warning-soft: #3D3017;
+  --be-warning-text: #FCD34D;
+
+  --be-danger: #F87171;
+  --be-danger-soft: #402323;
+  --be-danger-text: #FCA5A5;
+
+  --be-info: #60A5FA;
+  --be-info-soft: #1E304A;
+  --be-info-text: #93C5FD;
+
+  /* Shadows */
+  --be-shadow-card:
+    0 2px 8px rgb(0 0 0 / 0.12),
+    0 8px 24px rgb(0 0 0 / 0.12);
+
+  --be-shadow-elevated:
+    0 12px 32px rgb(0 0 0 / 0.28);
 }
 
-html {
-  min-width: 320px;
-  scroll-behavior: smooth;
+/* --------------------------------------------------
+   3. TAILWIND THEME TOKENS
+   -------------------------------------------------- */
+
+@theme inline {
+  /* Surfaces */
+  --color-background: var(--be-background);
+  --color-surface: var(--be-surface);
+  --color-surface-muted: var(--be-surface-muted);
+
+  /* Typography */
+  --color-foreground: var(--be-foreground);
+  --color-muted: var(--be-muted);
+
+  /* Brand */
+  --color-primary: var(--be-primary);
+  --color-primary-hover: var(--be-primary-hover);
+  --color-primary-foreground: var(--be-primary-foreground);
+  --color-primary-soft: var(--be-primary-soft);
+  --color-accent: var(--be-accent);
+
+  /* Borders */
+  --color-border: var(--be-border);
+  --color-focus: var(--be-focus);
+
+  /* Semantic colors */
+  --color-success: var(--be-success);
+  --color-success-soft: var(--be-success-soft);
+  --color-success-text: var(--be-success-text);
+
+  --color-warning: var(--be-warning);
+  --color-warning-soft: var(--be-warning-soft);
+  --color-warning-text: var(--be-warning-text);
+
+  --color-danger: var(--be-danger);
+  --color-danger-soft: var(--be-danger-soft);
+  --color-danger-text: var(--be-danger-text);
+
+  --color-info: var(--be-info);
+  --color-info-soft: var(--be-info-soft);
+  --color-info-text: var(--be-info-text);
+
+  /* Typography */
+--font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
+--font-heading: "Manrope Variable", "Inter Variable",
+  ui-sans-serif, system-ui, sans-serif;
+
+  /* Border radius */
+  --radius-card: 16px;
+  --radius-button: 8px;
+  --radius-input: 10px;
+
+  /* Shadows */
+  --shadow-card: var(--be-shadow-card);
+  --shadow-elevated: var(--be-shadow-elevated);
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background: #F7F7F5;
+/* Enable Tailwind dark mode utilities */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* --------------------------------------------------
+   4. GLOBAL BASE STYLES
+   -------------------------------------------------- */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-width: 320px;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+
+    font-family: var(--font-sans);
+    color: var(--be-foreground);
+    background-color: var(--be-background);
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--be-focus);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background-color: var(--be-primary);
+    color: var(--be-primary-foreground);
+  }
+
+  #root {
+    min-height: 100vh;
+  }
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
+/* --------------------------------------------------
+   5. ACCESSIBILITY
+   -------------------------------------------------- */
 
-button {
-  cursor: pointer;
-}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-#root {
-  min-height: 100vh;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

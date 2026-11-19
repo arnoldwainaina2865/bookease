@@ -1,4 +1,3 @@
-
 import {
   LayoutDashboard,
   CalendarDays,
@@ -7,6 +6,9 @@ import {
   Settings,
   LogOut,
   Scissors,
+  PanelLeftClose,
+  PanelLeftOpen,
+  X,
 } from 'lucide-react'
 
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -32,87 +34,185 @@ const navigation = [
     label: 'MANAGEMENT',
     items: [
       {
-  name: 'Services',
-  icon: BriefcaseBusiness,
-  path: '/provider/services',
-},
+        name: 'Services',
+        icon: BriefcaseBusiness,
+        path: '/provider/services',
+      },
       {
-  name: 'Customers',
-  icon: Users,
-  path: '/provider/customers',
-},
+        name: 'Customers',
+        icon: Users,
+        path: '/provider/customers',
+      },
     ],
   },
 ]
 
-function Sidebar() {
+function Sidebar({
+  isCollapsed = false,
+  onToggleSidebar,
+  isMobile = false,
+  onClose,
+}) {
   const navigate = useNavigate()
+
+  const SidebarIcon = isCollapsed
+    ? PanelLeftOpen
+    : PanelLeftClose
+
+  const toggleLabel = isCollapsed
+    ? 'Expand sidebar'
+    : 'Collapse sidebar'
 
   const handleLogout = () => {
     logoutUser()
     navigate('/login', { replace: true })
   }
 
+  const getNavigationClass = ({ isActive }) => `
+    flex min-h-11 w-full items-center rounded-button
+    py-3 text-sm transition-colors
+    ${isCollapsed ? 'justify-center px-2' : 'gap-3 px-3'}
+    ${
+      isActive
+        ? 'bg-primary-soft font-medium text-primary'
+        : 'text-muted hover:bg-surface-muted hover:text-foreground'
+    }
+  `
+
   return (
-    <aside className="flex h-screen w-[250px] shrink-0 flex-col border-r border-[#E7E8E4] bg-white px-5 py-6">
-
+    <aside
+      id={isMobile ? "provider-mobile-sidebar" : "provider-sidebar"}
+      className={`
+        flex h-dvh shrink-0 flex-col
+        overflow-x-hidden overflow-y-auto
+        border-r border-border bg-surface py-6
+        transition-[width,padding] duration-300 ease-in-out
+        motion-reduce:transition-none
+        ${isMobile
+          ? 'w-full px-5'
+          : `sticky top-0 ${isCollapsed ? 'w-20 px-3' : 'w-[250px] px-5'}`
+        }
+      `}
+    >
       {/* Brand */}
-      <div className="mb-12 flex items-center gap-3 px-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#647D68] text-white">
-          <Scissors size={19} />
+      <NavLink
+        to="/provider/dashboard"
+        onClick={onClose}
+        aria-label="BookEase dashboard"
+        title={isCollapsed ? 'BookEase' : undefined}
+        className={`
+          mb-6 flex min-h-10 items-center
+          ${isCollapsed ? 'justify-center' : 'gap-3 px-2'}
+        `}
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-button bg-primary text-primary-foreground">
+          <Scissors size={20} strokeWidth={1.8} />
         </div>
 
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight text-[#202421]">
-            BookEase
-          </h1>
-          <p className="text-xs text-[#777D76]">
-            Provider workspace
-          </p>
-        </div>
-      </div>
+        {!isCollapsed && (
+          <div className="whitespace-nowrap">
+            <h1 className="font-heading text-lg font-bold tracking-tight text-foreground">
+              BookEase
+            </h1>
+
+            <p className="text-xs text-muted">
+              Provider workspace
+            </p>
+          </div>
+        )}
+      </NavLink>
+
+      {isMobile ? (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close navigation"
+          className="mb-8 flex min-h-11 w-full items-center gap-3 rounded-button border border-border bg-surface-muted px-3 py-3 text-sm text-muted hover:text-primary"
+        >
+          <X size={20} strokeWidth={1.8} />
+          Close menu
+        </button>
+      ) : (
+        <>
+      {/* Sidebar collapse / expand toggle */}
+      <button
+        type="button"
+        onClick={onToggleSidebar}
+        aria-label={toggleLabel}
+        aria-expanded={!isCollapsed}
+        aria-controls="provider-sidebar"
+        title={toggleLabel}
+        className={`
+          mb-8 flex min-h-11 w-full items-center
+          rounded-button border border-border
+          bg-surface-muted py-3 text-sm text-muted
+          transition-colors hover:bg-primary-soft
+          hover:text-primary
+          ${isCollapsed
+            ? 'justify-center px-2'
+            : 'gap-3 px-3'}
+        `}
+      >
+        <SidebarIcon
+          size={20}
+          strokeWidth={1.8}
+          className="shrink-0"
+          aria-hidden="true"
+        />
+
+        {!isCollapsed && (
+          <span className="whitespace-nowrap">
+            Collapse
+          </span>
+        )}
+      </button>
+
+        </>
+      )}
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-8">
+      <nav
+        aria-label="Provider navigation"
+        className="flex-1 space-y-8"
+      >
         {navigation.map((section) => (
           <div key={section.label}>
-            <p className="mb-3 px-3 text-[10px] font-semibold tracking-[0.12em] text-[#999E98]">
-              {section.label}
-            </p>
+            {isCollapsed ? (
+              <div
+                aria-hidden="true"
+                className="mx-3 mb-3 border-t border-border"
+              />
+            ) : (
+              <p className="mb-3 whitespace-nowrap px-3 text-[10px] font-semibold tracking-[0.12em] text-muted">
+                {section.label}
+              </p>
+            )}
 
             <div className="space-y-1">
               {section.items.map((item) => {
                 const Icon = item.icon
 
-                if (!item.path) {
-                  return (
-                    <button
-                      key={item.name}
-                      type="button"
-                      disabled
-                      title="Coming soon"
-                      className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#B0B4AE] opacity-70"
-                    >
-                      <Icon size={18} strokeWidth={1.8} />
-                      <span>{item.name}</span>
-                    </button>
-                  )
-                }
-
                 return (
                   <NavLink
                     key={item.name}
                     to={item.path}
-                    className={({ isActive }) =>
-                      `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                        isActive
-                          ? 'bg-[#EEF2ED] font-medium text-[#526D57]'
-                          : 'text-[#777D76] hover:bg-[#F7F7F5] hover:text-[#202421]'
-                      }`
-                    }
+                    onClick={onClose}
+                    aria-label={item.name}
+                    title={isCollapsed ? item.name : undefined}
+                    className={getNavigationClass}
                   >
-                    <Icon size={18} strokeWidth={1.8} />
-                    <span>{item.name}</span>
+                    <Icon
+                      size={20}
+                      strokeWidth={1.8}
+                      className="shrink-0"
+                      aria-hidden="true"
+                    />
+
+                    {!isCollapsed && (
+                      <span className="whitespace-nowrap">
+                        {item.name}
+                      </span>
+                    )}
                   </NavLink>
                 )
               })}
@@ -122,30 +222,55 @@ function Sidebar() {
       </nav>
 
       {/* Account actions */}
-      <div className="space-y-1 border-t border-[#E7E8E4] pt-5">
-        
-<NavLink
-  to="/provider/settings"
-  className={({ isActive }) =>
-    `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-      isActive
-        ? 'bg-[#EEF2ED] font-medium text-[#526D57]'
-        : 'text-[#777D76] hover:bg-[#F7F7F5] hover:text-[#202421]'
-    }`
-  }
->
-  <Settings size={18} strokeWidth={1.8} />
-  <span>Settings</span>
-</NavLink>
+      <div className="mt-6 space-y-1 border-t border-border pt-5">
+        <NavLink
+          to="/provider/settings"
+          onClick={onClose}
+          aria-label="Settings"
+          title={isCollapsed ? 'Settings' : undefined}
+          className={getNavigationClass}
+        >
+          <Settings
+            size={20}
+            strokeWidth={1.8}
+            className="shrink-0"
+            aria-hidden="true"
+          />
 
+          {!isCollapsed && (
+            <span className="whitespace-nowrap">
+              Settings
+            </span>
+          )}
+        </NavLink>
 
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#777D76] transition-colors hover:bg-red-50 hover:text-red-600"
+          aria-label="Sign out"
+          title={isCollapsed ? 'Sign out' : undefined}
+          className={`
+            flex min-h-11 w-full items-center
+            rounded-button py-3 text-sm text-muted
+            transition-colors hover:bg-danger-soft
+            hover:text-danger-text
+            ${isCollapsed
+              ? 'justify-center px-2'
+              : 'gap-3 px-3'}
+          `}
         >
-          <LogOut size={18} strokeWidth={1.8} />
-          Sign out
+          <LogOut
+            size={20}
+            strokeWidth={1.8}
+            className="shrink-0"
+            aria-hidden="true"
+          />
+
+          {!isCollapsed && (
+            <span className="whitespace-nowrap">
+              Sign out
+            </span>
+          )}
         </button>
       </div>
     </aside>

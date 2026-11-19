@@ -76,15 +76,15 @@ const formatPrice = (price) => {
 // Return styling based on booking status.
 const getStatusStyle = (status) => {
   const styles = {
-    pending: 'bg-amber-50 text-amber-700 border-amber-200',
-    confirmed: 'bg-green-50 text-green-700 border-green-200',
-    completed: 'bg-gray-100 text-gray-700 border-gray-200',
-    cancelled: 'bg-red-50 text-red-700 border-red-200',
-    rejected: 'bg-red-50 text-red-700 border-red-200',
+    pending: 'bg-warning-soft text-warning-text border-warning/30',
+    confirmed: 'bg-success-soft text-success-text border-success/30',
+    completed: 'bg-surface-muted text-foreground border-border',
+    cancelled: 'bg-danger-soft text-danger-text border-danger/30',
+    rejected: 'bg-danger-soft text-danger-text border-danger/30',
   }
 
   return styles[status?.toLowerCase()] ||
-    'bg-gray-100 text-gray-600 border-gray-200'
+    'bg-surface-muted text-muted border-border'
 }
 const STATUS_TABS = [
   { label: 'All bookings', value: '' },
@@ -214,7 +214,7 @@ const filteredBookings = bookings.filter((booking) => {
         <div className="mb-8">
           <Link
             to="/customer/dashboard"
-            className="mb-5 inline-flex items-center gap-2 text-sm text-gray-500 transition hover:text-[#285C43]"
+            className="mb-5 inline-flex items-center gap-2 text-sm text-muted transition hover:text-primary"
           >
             <ArrowLeft size={16} />
             Back to dashboard
@@ -222,7 +222,7 @@ const filteredBookings = bookings.filter((booking) => {
 
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#52745E]">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
                 Customer workspace
               </p>
 
@@ -230,27 +230,27 @@ const filteredBookings = bookings.filter((booking) => {
                 My bookings
               </h1>
 
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-muted">
                 View and manage all your appointments in one place.
               </p>
             </div>
 
             <Link
               to="/customer/book"
-              className="inline-flex items-center justify-center rounded-xl bg-[#285C43] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#1F4935]"
+              className="inline-flex items-center justify-center rounded-card bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover"
             >
               Book a service
             </Link>
           </div>
         </div>
 {/* Booking filters */}
-<div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+<div className="mb-6 rounded-card border border-border bg-surface p-5 shadow-sm">
 
   {/* Search */}
   <div className="relative mb-6">
     <Search
       size={18}
-      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+      className="absolute left-4 top-1/2 -translate-y-1/2 text-muted"
     />
 
     <input
@@ -258,7 +258,7 @@ const filteredBookings = bookings.filter((booking) => {
       placeholder="Search by service or provider..."
       value={searchTerm}
       onChange={(e) => setSearchTerm(e.target.value)}
-      className="w-full rounded-xl border border-gray-200 bg-[#FAFAF8] py-3 pl-11 pr-4 text-sm outline-none transition focus:border-[#52745E] focus:ring-2 focus:ring-[#52745E]/10"
+      className="w-full rounded-card border border-border bg-surface-muted py-3 pl-11 pr-4 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary-soft"
     />
   </div>
 
@@ -268,10 +268,10 @@ const filteredBookings = bookings.filter((booking) => {
       <button
         key={tab.value || 'all'}
         onClick={() => handleStatusChange(tab.value)}
-        className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+        className={`rounded-card px-4 py-2 text-sm font-medium transition ${
           activeStatus === tab.value
-            ? 'bg-[#285C43] text-white'
-            : 'bg-[#F4F5F2] text-gray-600 hover:bg-[#E9EEE9]'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-surface-muted text-muted hover:bg-primary-soft'
         }`}
       >
         {tab.label}
@@ -283,13 +283,13 @@ const filteredBookings = bookings.filter((booking) => {
 
 {/* Feedback messages */}
 {error && (
-  <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+  <div className="mb-5 rounded-card border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger-text">
     {error}
   </div>
 )}
 
 {successMessage && (
-  <div className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+  <div className="mb-5 rounded-card border border-success/30 bg-success-soft px-4 py-3 text-sm text-success-text">
     {successMessage}
   </div>
 )}
@@ -297,23 +297,23 @@ const filteredBookings = bookings.filter((booking) => {
 <div className="space-y-4">
 
   {loading ? (
-    <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-      <p className="text-sm text-gray-500">
+    <div className="rounded-card border border-border bg-surface p-12 text-center">
+      <p className="text-sm text-muted">
         Loading your bookings...
       </p>
     </div>
   ) : filteredBookings.length === 0 ? (
-    <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+    <div className="rounded-card border border-border bg-surface p-12 text-center">
       <CalendarDays
         size={36}
-        className="mx-auto mb-4 text-gray-400"
+        className="mx-auto mb-4 text-muted"
       />
 
-      <h3 className="text-lg font-semibold text-[#24352B]">
+      <h3 className="text-lg font-semibold text-foreground">
         No bookings found
       </h3>
 
-      <p className="mt-2 text-sm text-gray-500">
+      <p className="mt-2 text-sm text-muted">
         {searchTerm
           ? 'Try a different search term.'
           : 'You have no bookings in this category yet.'}
@@ -322,7 +322,7 @@ const filteredBookings = bookings.filter((booking) => {
       {!searchTerm && (
         <Link
           to="/customer/book"
-          className="mt-5 inline-flex rounded-xl bg-[#285C43] px-5 py-3 text-sm font-medium text-white hover:bg-[#1F4935]"
+          className="mt-5 inline-flex rounded-card bg-primary px-5 py-3 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
         >
           Book a service
         </Link>
@@ -332,17 +332,17 @@ const filteredBookings = bookings.filter((booking) => {
     filteredBookings.map((booking) => (
       <div
         key={booking.id}
-        className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md sm:p-6"
+        className="rounded-card border border-border bg-surface p-5 shadow-sm transition hover:shadow-md sm:p-6"
       >
         {/* Service and status */}
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
 
           <div>
-            <h3 className="text-lg font-semibold text-[#24352B]">
+            <h3 className="text-lg font-semibold text-foreground">
               {booking.service}
             </h3>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-muted">
               Provided by {booking.provider}
             </p>
           </div>
@@ -355,19 +355,19 @@ const filteredBookings = bookings.filter((booking) => {
         </div>
 
         {/* Appointment details */}
-        <div className="mt-5 grid gap-4 border-t border-gray-100 pt-5 sm:grid-cols-2">
+        <div className="mt-5 grid gap-4 border-t border-border pt-5 sm:grid-cols-2">
 
           <div className="flex items-center gap-3">
             <CalendarDays
               size={19}
-              className="text-[#52745E]"
+              className="text-primary"
             />
 
             <div>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-muted">
                 Appointment date
               </p>
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-foreground">
                 {formatDate(booking.start_at)}
               </p>
             </div>
@@ -376,14 +376,14 @@ const filteredBookings = bookings.filter((booking) => {
           <div className="flex items-center gap-3">
             <Clock3
               size={19}
-              className="text-[#52745E]"
+              className="text-primary"
             />
 
             <div>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-muted">
                 Appointment time
               </p>
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-foreground">
                 {formatTime(booking.start_at)}
               </p>
             </div>
@@ -392,36 +392,36 @@ const filteredBookings = bookings.filter((booking) => {
         </div>
 
         {/* Price and cancellation */}
-        <div className="mt-5 flex flex-col justify-between gap-4 border-t border-gray-100 pt-5 sm:flex-row sm:items-center">
+        <div className="mt-5 flex flex-col justify-between gap-4 border-t border-border pt-5 sm:flex-row sm:items-center">
 
           <div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted">
               Total price
             </p>
-            <p className="text-lg font-semibold text-[#285C43]">
+            <p className="text-lg font-semibold text-primary">
               {formatPrice(booking.total_price)}
             </p>
           </div>
 
-          
+
 {canCancelBooking(booking, currentTime) ? (
   <button
     onClick={() => handleCancelBooking(booking)}
     disabled={cancellingBookingId === booking.id}
-    className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+    className="rounded-card border border-danger/30 px-4 py-2.5 text-sm font-medium text-danger-text transition hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-50"
   >
     {cancellingBookingId === booking.id
       ? 'Cancelling...'
       : 'Cancel appointment'}
   </button>
 ) : hasCancellableStatus(booking) ? (
-  <div className="max-w-sm rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-    <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+  <div className="max-w-sm rounded-card border border-border bg-surface-muted px-4 py-3">
+    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
       <Clock3 size={16} />
       Cancellation unavailable
     </div>
 
-    <p className="mt-1 text-xs leading-relaxed text-gray-500">
+    <p className="mt-1 text-xs leading-relaxed text-muted">
       Appointments must be cancelled more than
       24 hours before the scheduled start time.
     </p>
@@ -438,9 +438,9 @@ const filteredBookings = bookings.filter((booking) => {
 
 {/* Pagination controls */}
 {!loading && pagination.total_pages > 1 && (
-  <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-6 sm:flex-row">
+  <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-border pt-6 sm:flex-row">
 
-    <p className="text-sm text-gray-500">
+    <p className="text-sm text-muted">
       Page {pagination.page} of {pagination.total_pages}
       {' '}· {pagination.total_bookings} bookings
     </p>
@@ -450,7 +450,7 @@ const filteredBookings = bookings.filter((booking) => {
       <button
         onClick={() => setPage((current) => current - 1)}
         disabled={!pagination.has_previous}
-        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="inline-flex items-center gap-2 rounded-card border border-border px-4 py-2 text-sm font-medium text-muted transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
       >
         <ChevronLeft size={16} />
         Previous
@@ -459,7 +459,7 @@ const filteredBookings = bookings.filter((booking) => {
       <button
         onClick={() => setPage((current) => current + 1)}
         disabled={!pagination.has_next}
-        className="inline-flex items-center gap-2 rounded-xl bg-[#285C43] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1F4935] disabled:cursor-not-allowed disabled:opacity-40"
+        className="inline-flex items-center gap-2 rounded-card bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
       >
         Next
         <ChevronRight size={16} />
@@ -471,7 +471,7 @@ const filteredBookings = bookings.filter((booking) => {
 
 
 
-        
+
 
       </div>
   )

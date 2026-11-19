@@ -15,6 +15,8 @@ function CustomerDashboard() {
 
   const [services, setServices] = useState([])
   const [bookings, setBookings] = useState([])
+  const [totalBookings, setTotalBookings] = useState(null)
+  const [totalServices, setTotalServices] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
@@ -32,7 +34,9 @@ const [cancellingBookingId, setCancellingBookingId] = useState(null)
         ])
 
         setServices(servicesData.services || [])
+        setTotalServices(servicesData.pagination?.total_services ?? null)
         setBookings(bookingsData.bookings || [])
+        setTotalBookings(bookingsData.pagination?.total_bookings ?? null)
       } catch (err) {
         setError(
           err.response?.data?.message ||
@@ -66,6 +70,7 @@ const [cancellingBookingId, setCancellingBookingId] = useState(null)
 
     const bookingsData = await getCustomerBookings({ per_page: 5 })
     setBookings(bookingsData.bookings || [])
+        setTotalBookings(bookingsData.pagination?.total_bookings ?? null)
   } catch (err) {
     setError(
       err.response?.data?.message ||
@@ -93,107 +98,107 @@ const [cancellingBookingId, setCancellingBookingId] = useState(null)
 
   const getStatusStyle = (status) => {
     const styles = {
-      pending: 'bg-amber-50 text-amber-700',
-      confirmed: 'bg-emerald-50 text-emerald-700',
-      completed: 'bg-slate-100 text-slate-700',
-      cancelled: 'bg-red-50 text-red-700',
-      rejected: 'bg-red-50 text-red-700',
+      pending: 'bg-warning-soft text-warning-text',
+      confirmed: 'bg-success-soft text-success-text',
+      completed: 'bg-surface-muted text-muted',
+      cancelled: 'bg-danger-soft text-danger-text',
+      rejected: 'bg-danger-soft text-danger-text',
     }
 
-    return styles[status?.toLowerCase()] || 'bg-gray-100 text-gray-700'
+    return styles[status?.toLowerCase()] || 'bg-surface-muted text-foreground'
   }
 
 
   return (
-    <div className="min-h-screen bg-[#F7F7F5] text-[#202421]">
-      
+    <div className="bg-background text-foreground">
 
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        <section className="mb-9">
-          <p className="text-sm text-[#777D76] mb-2">
+
+      <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <section className="mb-6 sm:mb-8">
+          <p className="text-sm text-muted mb-2">
             CUSTOMER WORKSPACE
           </p>
 
-          <h1 className="text-3xl font-semibold tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
             Welcome back, {user?.full_name?.split(' ')[0] || 'there'}.
           </h1>
 
-          <p className="text-[#777D76] mt-2">
+          <p className="mt-2 text-sm text-muted">
             Discover services and keep your appointments organised.
           </p>
         </section>
 
         {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mb-6 rounded-button border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger-text">
             {error}
           </div>
         )}
         {successMessage && (
-  <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+  <div className="mb-6 rounded-button border border-success/30 bg-success-soft px-4 py-3 text-sm text-success-text">
     {successMessage}
   </div>
 )}
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10">
-          <div className="bg-white border border-[#E7E8E4] rounded-xl p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-[#777D76]">Your bookings</p>
-              <CalendarDays size={20} className="text-[#647D68]" />
+        <section className="mb-8 grid grid-cols-2 gap-3 sm:gap-5">
+          <div className="min-w-0 rounded-card border border-border bg-surface p-3 sm:p-6">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted sm:text-sm">Your bookings</p>
+              <CalendarDays size={18} className="shrink-0 text-primary" />
             </div>
 
-            <p className="text-3xl font-semibold mt-4">
-              {loading ? '—' : bookings.length}
+            <p className="mt-3 text-2xl font-semibold text-foreground sm:mt-4 sm:text-3xl">
+              {loading ? '—' : (totalBookings ?? '—')}
             </p>
 
-            <p className="text-xs text-[#929890] mt-1">
-              Recently retrieved bookings
+            <p className="text-xs text-muted mt-1">
+              All your appointments
             </p>
           </div>
 
-          <div className="bg-white border border-[#E7E8E4] rounded-xl p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-[#777D76]">Available services</p>
-              <Scissors size={20} className="text-[#647D68]" />
+          <div className="min-w-0 rounded-card border border-border bg-surface p-3 sm:p-6">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted sm:text-sm">Available services</p>
+              <Scissors size={18} className="shrink-0 text-primary" />
             </div>
 
-            <p className="text-3xl font-semibold mt-4">
-              {loading ? '—' : services.length}
+            <p className="mt-3 text-2xl font-semibold text-foreground sm:mt-4 sm:text-3xl">
+              {loading ? '—' : (totalServices ?? '—')}
             </p>
 
-            <p className="text-xs text-[#929890] mt-1">
-              Services currently displayed
+            <p className="text-xs text-muted mt-1">
+              Across all providers
             </p>
           </div>
         </section>
 
-        <section className="mb-12">
+        <section className="mb-8 sm:mb-10">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-xl font-semibold">Explore services</h2>
-              <p className="text-sm text-[#777D76] mt-1">
+              <p className="text-sm text-muted mt-1">
                 Find a service that suits your needs.
               </p>
             </div>
           </div>
 
           {loading ? (
-            <p className="text-sm text-[#777D76] py-8">
+            <p className="text-sm text-muted py-8">
               Loading available services...
             </p>
           ) : services.length === 0 ? (
-            <div className="bg-white border border-[#E7E8E4] rounded-xl p-8 text-center">
-              <p className="text-sm text-[#777D76]">
+            <div className="bg-surface border border-border rounded-card p-8 text-center">
+              <p className="text-sm text-muted">
                 No services are currently available.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 sm:gap-5">
               {services.map((service) => (
                 <article
                   key={service.id}
-                  className="bg-white border border-[#E7E8E4] rounded-xl p-6"
+                  className="flex min-w-0 flex-col rounded-card border border-border bg-surface p-4 transition-shadow hover:shadow-card sm:p-6"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-[#F0F3EF] text-[#647D68] flex items-center justify-center mb-4">
+                  <div className="w-10 h-10 rounded-button bg-primary-soft text-primary flex items-center justify-center mb-4">
                     <Scissors size={19} />
                   </div>
 
@@ -201,34 +206,35 @@ const [cancellingBookingId, setCancellingBookingId] = useState(null)
                     {service.name}
                   </h3>
 
-                  <p className="text-sm text-[#777D76] mt-2 line-clamp-2">
+                  <p className="mb-5 mt-2 line-clamp-2 text-sm text-muted">
                     {service.description || 'Service details available on request.'}
                   </p>
 
-                  <div className="mt-5 pt-4 border-t border-[#E7E8E4] space-y-3">
-                    <p className="font-semibold text-[#647D68]">
+                  <div className="mt-auto space-y-3 border-t border-border pt-4">
+                    <p className="text-lg font-semibold text-primary">
                       KSh {Number(service.price).toLocaleString('en-KE')}
                     </p>
 
-                    <div className="flex items-center gap-2 text-xs text-[#777D76]">
+                    <div className="flex items-center gap-2 text-xs text-muted">
                       <Clock3 size={14} />
                       {service.duration_minutes} minutes
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-[#777D76]">
+                    <div className="flex items-center gap-2 text-xs text-muted">
                       <MapPin size={14} />
                       {service.provider?.location || 'Location not specified'}
                     </div>
 
-                    <p className="text-xs text-[#202421] font-medium">
+                    <p className="text-xs text-foreground font-medium">
                       {service.provider?.business_name}
-                      <Link
+                    </p>
+
+                    <Link
   to={`/customer/book?serviceId=${service.id}`}
-  className="mt-5 flex w-full items-center justify-center rounded-lg bg-[#647D68] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#526A56]"
+  className="mt-5 flex w-full items-center justify-center rounded-button bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover"
 >
   Book appointment
-</Link>
-                    </p>
+                    </Link>
                   </div>
                 </article>
               ))}
@@ -237,32 +243,41 @@ const [cancellingBookingId, setCancellingBookingId] = useState(null)
         </section>
 
         <section>
-          <div className="mb-5">
-            <h2 className="text-xl font-semibold">Recent appointments</h2>
-            <p className="text-sm text-[#777D76] mt-1">
-              Keep track of your latest bookings.
-            </p>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold">Recent appointments</h2>
+              <p className="mt-1 text-sm text-muted">
+                Keep track of your latest bookings.
+              </p>
+            </div>
+
+            <Link
+              to="/customer/bookings"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              View all bookings
+            </Link>
           </div>
 
           {loading ? (
-            <p className="text-sm text-[#777D76] py-8">
+            <p className="text-sm text-muted py-8">
               Loading appointments...
             </p>
           ) : bookings.length === 0 ? (
-            <div className="bg-white border border-[#E7E8E4] rounded-xl p-8 text-center">
+            <div className="bg-surface border border-border rounded-card p-8 text-center">
               <CalendarDays
                 size={28}
-                className="mx-auto text-[#929890] mb-3"
+                className="mx-auto text-muted mb-3"
               />
 
               <h3 className="font-medium">No appointments yet</h3>
 
-              <p className="text-sm text-[#777D76] mt-2">
+              <p className="text-sm text-muted mt-2">
                 Your bookings will appear here once you make a reservation.
               </p>
             </div>
           ) : (
-            <div className="bg-white border border-[#E7E8E4] rounded-xl divide-y divide-[#E7E8E4]">
+            <div className="bg-surface border border-border rounded-card divide-y divide-border">
               {bookings.map((booking) => (
                 <div
                   key={booking.id}
@@ -273,11 +288,11 @@ const [cancellingBookingId, setCancellingBookingId] = useState(null)
                       {booking.service}
                     </h3>
 
-                    <p className="text-sm text-[#777D76] mt-1">
+                    <p className="text-sm text-muted mt-1">
                       {booking.provider}
                     </p>
 
-                    <p className="text-xs text-[#929890] mt-2">
+                    <p className="text-xs text-muted mt-2">
                       {formatDate(booking.start_at)} at {formatTime(booking.start_at)}
                     </p>
                   </div>
@@ -297,7 +312,7 @@ const [cancellingBookingId, setCancellingBookingId] = useState(null)
     <button
       onClick={() => handleCancelBooking(booking)}
       disabled={cancellingBookingId === booking.id}
-      className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+      className="px-3 py-1.5 rounded-button border border-danger/30 text-danger-text text-xs font-medium hover:bg-danger-soft disabled:opacity-50 disabled:cursor-not-allowed transition"
     >
       {cancellingBookingId === booking.id
         ? 'Cancelling...'
@@ -310,7 +325,7 @@ const [cancellingBookingId, setCancellingBookingId] = useState(null)
             </div>
           )}
         </section>
-      </main>
+      </div>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 
 import { useState } from 'react'
+import ThemeToggle from '../../components/ui/ThemeToggle'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Scissors,
@@ -9,7 +10,6 @@ import {
   Store,
   Phone,
   MapPin,
-  BriefcaseBusiness,
   ArrowRight,
 } from 'lucide-react'
 
@@ -152,35 +152,106 @@ function UnifiedAuth() {
   }
 
   const inputClass =
-    'w-full rounded-lg border border-[#E7E8E4] bg-white px-4 py-3 text-sm text-[#202421] outline-none transition focus:border-[#647D68]'
+    'w-full rounded-input border border-border bg-surface px-4 py-3.5 text-sm text-foreground placeholder:text-muted outline-none transition focus:border-primary focus:ring-2 focus:ring-primary-soft'
 
   const labelClass =
-    'mb-2 block text-sm font-medium text-[#343A35]'
+    'mb-2 block text-sm font-medium text-foreground'
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#F7F7F5] px-5 py-10">
-      <section className="w-full max-w-lg">
+    <main className="relative isolate min-h-screen bg-[#142B20] px-4 py-8 sm:px-8 lg:py-12">
 
-        {/* Brand */}
-        <div className="mb-7 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#647D68] text-white">
-            <Scissors size={23} />
-          </div>
+      {/* Luxury photographic background */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/images/auth-background.png')",
+        }}
+      />
 
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[#202421]">
-            BookEase
-          </h1>
+      {/* Background overlay */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 -z-10 bg-black/45"
+      />
 
-          <p className="mt-2 text-sm text-[#777D76]">
-            Your appointments, made simple.
-          </p>
-        </div>
+      <div className="mx-auto flex min-h-[calc(100dvh-6rem)] max-w-6xl items-center">
 
-        <div className="rounded-2xl border border-[#E7E8E4] bg-white p-6 shadow-sm sm:p-8">
+        <section className="grid w-full overflow-hidden rounded-[28px] border border-[#C9A66B]/40 shadow-2xl lg:grid-cols-[0.9fr_1.1fr]">
+
+          {/* Luxury branding panel */}
+          <aside className="relative hidden flex-col justify-between overflow-hidden bg-[#142B20]/95 p-12 text-[#F5EFE5] lg:flex xl:p-16">
+
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full border border-[#C9A66B]/15"
+            />
+
+            <div className="relative flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#C9A66B]/50 text-[#D7BA85]">
+                <Scissors size={27} strokeWidth={1.5} />
+              </div>
+
+              <span className="font-serif text-4xl tracking-tight">
+                BookEase
+              </span>
+            </div>
+
+            <div className="relative py-16">
+              <p className="mb-7 text-xs font-medium uppercase tracking-[0.28em] text-[#D7BA85]">
+                A better way to book
+              </p>
+
+              <div className="mb-8 h-px w-20 bg-[#C9A66B]" />
+
+              <h1 className="font-serif text-5xl font-normal leading-[1.12] tracking-tight xl:text-6xl">
+                Make time for
+                <span className="block italic text-[#D7BA85]">
+                  what matters.
+                </span>
+              </h1>
+
+              <p className="mt-7 max-w-sm text-base leading-relaxed text-[#D1DDD4]">
+                Discover exceptional services, manage your appointments,
+                and make every moment count.
+              </p>
+            </div>
+
+            <div className="relative border-t border-[#C9A66B]/25 pt-6">
+              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D7BA85]">
+                Beauty · Wellness · Lifestyle
+              </p>
+            </div>
+
+          </aside>
+
+          {/* Theme-aware authentication panel */}
+<div className="bg-surface/85 backdrop-blur-md px-6 py-8 text-foreground sm:px-10 lg:p-12 xl:p-14">
+            <div className="mb-8 flex items-center justify-between gap-4">
+
+              <div className="flex items-center gap-3 lg:hidden">
+                <div className="flex h-10 w-10 items-center justify-center rounded-button bg-primary text-primary-foreground">
+                  <Scissors size={20} />
+                </div>
+
+                <span className="font-serif text-2xl text-foreground">
+                  BookEase
+                </span>
+              </div>
+
+              <div className="hidden lg:block">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted">
+                  Your personal workspace
+                </p>
+              </div>
+
+              <ThemeToggle />
+
+            </div>
 
           {/* Account type */}
           <div className="mb-7">
-            <h2 className="mb-3 text-sm font-semibold text-[#202421]">
+            <h2 className="mb-3 text-sm font-semibold text-foreground">
               I want to continue as
             </h2>
 
@@ -188,10 +259,10 @@ function UnifiedAuth() {
               <button
                 type="button"
                 onClick={() => handleRoleChange('customer')}
-                className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition ${
+                className={`flex items-center justify-center gap-2 rounded-card border px-4 py-3 text-sm font-medium transition ${
                   role === 'customer'
-                    ? 'border-[#647D68] bg-[#EDF2ED] text-[#526D57]'
-                    : 'border-[#E7E8E4] text-[#777D76] hover:bg-[#F7F7F5]'
+                    ? 'border-primary bg-primary-soft text-primary'
+                    : 'border-border text-muted hover:bg-surface-muted'
                 }`}
               >
                 <UserRound size={18} />
@@ -201,10 +272,10 @@ function UnifiedAuth() {
               <button
                 type="button"
                 onClick={() => handleRoleChange('provider')}
-                className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition ${
+                className={`flex items-center justify-center gap-2 rounded-card border px-4 py-3 text-sm font-medium transition ${
                   role === 'provider'
-                    ? 'border-[#647D68] bg-[#EDF2ED] text-[#526D57]'
-                    : 'border-[#E7E8E4] text-[#777D76] hover:bg-[#F7F7F5]'
+                    ? 'border-primary bg-primary-soft text-primary'
+                    : 'border-border text-muted hover:bg-surface-muted'
                 }`}
               >
                 <Store size={18} />
@@ -214,14 +285,14 @@ function UnifiedAuth() {
           </div>
 
           {/* Sign in / Register tabs */}
-          <div className="mb-7 grid grid-cols-2 border-b border-[#E7E8E4]">
+          <div className="mb-7 grid grid-cols-2 border-b border-border">
             <button
               type="button"
               onClick={() => handleModeChange('login')}
               className={`border-b-2 pb-3 text-sm font-medium transition ${
                 mode === 'login'
-                  ? 'border-[#647D68] text-[#526D57]'
-                  : 'border-transparent text-[#929890]'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted'
               }`}
             >
               Sign in
@@ -232,8 +303,8 @@ function UnifiedAuth() {
               onClick={() => handleModeChange('register')}
               className={`border-b-2 pb-3 text-sm font-medium transition ${
                 mode === 'register'
-                  ? 'border-[#647D68] text-[#526D57]'
-                  : 'border-transparent text-[#929890]'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted'
               }`}
             >
               Create account
@@ -242,13 +313,13 @@ function UnifiedAuth() {
 
           {/* Heading */}
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-[#202421]">
+            <h2 className="font-serif text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
               {mode === 'login'
                 ? 'Welcome back'
                 : `Create your ${role} account`}
             </h2>
 
-            <p className="mt-2 text-sm text-[#777D76]">
+            <p className="mt-2 text-sm text-muted">
               {mode === 'login'
                 ? `Sign in to access your ${role === 'provider' ? 'business workspace' : 'appointments and services'}.`
                 : role === 'provider'
@@ -259,13 +330,13 @@ function UnifiedAuth() {
 
           {/* Feedback */}
           {error && (
-            <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="mb-5 rounded-button border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger-text">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <div className="mb-5 rounded-button border border-success/30 bg-success-soft px-4 py-3 text-sm text-success-text">
               {success}
             </div>
           )}
@@ -283,7 +354,7 @@ function UnifiedAuth() {
                   <div className="relative">
                     <UserRound
                       size={18}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929890]"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                     />
 
                     <input
@@ -308,7 +379,7 @@ function UnifiedAuth() {
                       <div className="relative">
                         <Store
                           size={18}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929890]"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                         />
 
                         <input
@@ -354,7 +425,7 @@ function UnifiedAuth() {
                       <div className="relative">
                         <MapPin
                           size={18}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929890]"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                         />
 
                         <input
@@ -372,7 +443,7 @@ function UnifiedAuth() {
                     <div>
                       <label className={labelClass}>
                         Business description
-                        <span className="ml-1 font-normal text-[#929890]">
+                        <span className="ml-1 font-normal text-muted">
                           (Optional)
                         </span>
                       </label>
@@ -400,7 +471,7 @@ function UnifiedAuth() {
               <div className="relative">
                 <Mail
                   size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929890]"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                 />
 
                 <input
@@ -420,7 +491,7 @@ function UnifiedAuth() {
               <div>
                 <label className={labelClass}>
                   Phone number
-                  <span className="ml-1 font-normal text-[#929890]">
+                  <span className="ml-1 font-normal text-muted">
                     (Optional)
                   </span>
                 </label>
@@ -428,7 +499,7 @@ function UnifiedAuth() {
                 <div className="relative">
                   <Phone
                     size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929890]"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                   />
 
                   <input
@@ -452,7 +523,7 @@ function UnifiedAuth() {
               <div className="relative">
                 <LockKeyhole
                   size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929890]"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                 />
 
                 <input
@@ -477,7 +548,7 @@ function UnifiedAuth() {
                 <div className="relative">
                   <LockKeyhole
                     size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929890]"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                   />
 
                   <input
@@ -496,7 +567,7 @@ function UnifiedAuth() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#647D68] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#526D57] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-button bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading
                 ? 'Please wait...'
@@ -509,14 +580,15 @@ function UnifiedAuth() {
 
           </form>
 
-          <p className="mt-6 text-center text-xs text-[#929890]">
+          <p className="mt-6 text-center text-xs text-muted">
             {role === 'provider'
               ? 'Manage your services and bookings with BookEase.'
               : 'Discover services and keep your appointments organised.'}
           </p>
 
-        </div>
-      </section>
+          </div>
+        </section>
+      </div>
     </main>
   )
 }
