@@ -12,6 +12,7 @@ class User(db.Model):
 
     # Personal information
     full_name = db.Column(db.String(120), nullable=False)
+
     email = db.Column(
         db.String(255),
         unique=True,
@@ -22,6 +23,12 @@ class User(db.Model):
         db.String(20),
         unique=True,
         nullable=True
+    )
+
+    # Profile picture
+    avatar_filename = db.Column(
+    db.String(255),
+    nullable=True
     )
 
     # Authentication

@@ -39,3 +39,21 @@ class Config:
     JWT_SECRET_KEY = get_required_env("JWT_SECRET_KEY")
 
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+
+    # Profile picture storage
+    AVATAR_UPLOAD_FOLDER = BASE_DIR / "instance" / "uploads" / "avatars"
+
+    # Maximum uploaded image size: 5 MB
+    AVATAR_MAX_FILE_SIZE = 5 * 1024 * 1024
+
+    # Maximum decoded image dimensions
+    AVATAR_MAX_PIXELS = 20_000_000
+
+    # Supported image formats
+    AVATAR_ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
+
+    # Processed avatar dimensions
+    AVATAR_IMAGE_SIZE = (512, 512)
+
+    # Processed image quality
+    AVATAR_IMAGE_QUALITY = 85

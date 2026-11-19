@@ -17,12 +17,17 @@ from app.routes.customer import customer_bp
 from app.routes.services import services_bp
 from app.routes.provider import provider_bp
 
-def create_app():
+
+def create_app(test_config=None):
     # Create Flask application
     app = Flask(__name__)
 
-    # Load configuration
+    # Load default configuration
     app.config.from_object(Config)
+
+    # Apply optional testing configuration
+    if test_config is not None:
+        app.config.update(test_config)
 
     # Initialize extensions
     db.init_app(app)
@@ -33,13 +38,10 @@ def create_app():
     # Allow frontend communication
     CORS(app)
 
-    #Register authentication routes
+    # Register blueprints
     app.register_blueprint(auth_bp)
-
     app.register_blueprint(customer_bp)
-
     app.register_blueprint(services_bp)
-
     app.register_blueprint(provider_bp)
 
     # Health-check endpoint
