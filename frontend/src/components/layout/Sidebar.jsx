@@ -9,6 +9,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   X,
+  UserRound,
 } from 'lucide-react'
 
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -223,6 +224,26 @@ function Sidebar({
 
       {/* Account actions */}
       <div className="mt-6 space-y-1 border-t border-border pt-5">
+        <NavLink
+  to="/provider/profile"
+  onClick={onClose}
+  aria-label="My Profile"
+  title={isCollapsed ? 'My Profile' : undefined}
+  className={getNavigationClass}
+>
+  <UserRound
+    size={20}
+    strokeWidth={1.8}
+    className="shrink-0"
+    aria-hidden="true"
+  />
+
+  {!isCollapsed && (
+    <span className="whitespace-nowrap">
+      My Profile
+    </span>
+  )}
+</NavLink>
         <NavLink
           to="/provider/settings"
           onClick={onClose}

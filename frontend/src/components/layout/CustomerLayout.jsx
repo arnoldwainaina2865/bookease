@@ -12,6 +12,7 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  UserRound,
 } from 'lucide-react'
 
 import {
@@ -37,6 +38,11 @@ const navigation = [
     label: 'Book a Service',
     path: '/customer/book',
     icon: PlusCircle,
+  },
+  {
+    label: 'My Profile',
+    path: '/customer/profile',
+    icon: UserRound,
   },
 ]
 

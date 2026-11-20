@@ -18,6 +18,8 @@ import CustomerDashboard from './pages/customer/CustomerDashboard'
 import BookAppointment from './pages/customer/BookAppointment'
 import CustomerBookings from './pages/customer/CustomerBookings'
 import CustomerLayout from './components/layout/CustomerLayout'
+import Profile from './pages/profile/Profile'
+import DashboardLayout from './components/layout/DashboardLayout'
 
 import {
   getCurrentUser,
@@ -140,6 +142,16 @@ function App() {
     </ProviderRoute>
   }
 />
+<Route
+  path="/provider/profile"
+  element={
+    <ProviderRoute>
+      <DashboardLayout>
+        <Profile />
+      </DashboardLayout>
+    </ProviderRoute>
+  }
+/>
 
 
         {/* Customer workspace */}
@@ -175,6 +187,16 @@ function App() {
             </CustomerRoute>
           }
         />
+        <Route
+  path="/customer/profile"
+  element={
+    <CustomerRoute>
+      <CustomerLayout>
+        <Profile />
+      </CustomerLayout>
+    </CustomerRoute>
+  }
+/>
 
 
         {/* Unknown routes */}
