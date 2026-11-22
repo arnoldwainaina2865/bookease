@@ -653,3 +653,79 @@ def remove_current_user_avatar():
         "message": "Profile picture removed successfully.",
         "user": serialize_personal_profile(user)
     }), 200
+
+
+# --------------------------------------------------
+# CHANGE PASSWORD
+# --------------------------------------------------
+
+@auth_bp.route("/change-password", methods=["PUT"])
+@roles_required("customer", "provider", "admin")
+def change_password():
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({
+            "success": False,
+            "message": "A valid JSON request body is required."
+        }), 400
+
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+
+    if not isinstance(current_password, str) or not isinstance(new_password, str):
+        return jsonify({
+            "success": False,
+            "message": "Current password and new password are required."
+        }), 400
+
+    if not current_password or not new_password:
+        return jsonify({
+            "success": False,
+            "message": "Current password and new password are required."
+        }), 400
+
+    if len(new_password) < 8 or len(new_password) > 72:
+        return jsonify({
+            "success": False,
+            "message": "New password must contain between 8 and 72 characters."
+        }), 400
+
+    user_id = int(get_jwt_identity())
+    user = db.session.get(User, user_id)
+
+    if not user or not user.is_active:
+        return jsonify({
+            "success": False,
+            "message": "User account not found or inactive."
+        }), 403
+
+    if not user.check_password(current_password):
+        return jsonify({
+            "success": False,
+            "message": "Current password is incorrect."
+        }), 401
+
+    if user.check_password(new_password):
+        return jsonify({
+            "success": False,
+            "message": "New password must be different from your current password."
+        }), 400
+
+    try:
+        user.set_password(new_password)
+        db.session.commit()
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Failed to update account password")
+
+        return jsonify({
+            "success": False,
+            "message": "Unable to update password. Please try again."
+        }), 500
+
+    return jsonify({
+        "success": True,
+        "message": "Password changed successfully."
+    }), 200

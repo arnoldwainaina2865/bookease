@@ -9,6 +9,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   X,
+  ShieldCheck,
   UserRound,
 } from 'lucide-react'
 
@@ -244,6 +245,29 @@ function Sidebar({
     </span>
   )}
 </NavLink>
+
+
+<NavLink
+  to="/provider/change-password"
+  onClick={onClose}
+  aria-label="Account Security"
+  title={isCollapsed ? 'Account Security' : undefined}
+  className={getNavigationClass}
+>
+  <ShieldCheck
+    size={20}
+    strokeWidth={1.8}
+    className="shrink-0"
+    aria-hidden="true"
+  />
+
+  {!isCollapsed && (
+    <span className="whitespace-nowrap">
+      Account Security
+    </span>
+  )}
+</NavLink>
+
         <NavLink
           to="/provider/settings"
           onClick={onClose}

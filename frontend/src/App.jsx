@@ -19,6 +19,7 @@ import BookAppointment from './pages/customer/BookAppointment'
 import CustomerBookings from './pages/customer/CustomerBookings'
 import CustomerLayout from './components/layout/CustomerLayout'
 import Profile from './pages/profile/Profile'
+import ChangePassword from './pages/profile/ChangePassword'
 import DashboardLayout from './components/layout/DashboardLayout'
 
 import {
@@ -152,6 +153,16 @@ function App() {
     </ProviderRoute>
   }
 />
+<Route
+  path="/provider/change-password"
+  element={
+    <ProviderRoute>
+      <DashboardLayout>
+        <ChangePassword />
+      </DashboardLayout>
+    </ProviderRoute>
+  }
+/>
 
 
         {/* Customer workspace */}
@@ -198,6 +209,16 @@ function App() {
   }
 />
 
+<Route
+  path="/customer/change-password"
+  element={
+    <CustomerRoute>
+      <CustomerLayout>
+        <ChangePassword />
+      </CustomerLayout>
+    </CustomerRoute>
+  }
+/>
 
         {/* Unknown routes */}
         <Route path="*" element={<HomeRedirect />} />

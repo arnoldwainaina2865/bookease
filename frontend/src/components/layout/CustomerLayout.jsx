@@ -12,6 +12,7 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  ShieldCheck,
   UserRound,
 } from 'lucide-react'
 
@@ -44,6 +45,11 @@ const navigation = [
     path: '/customer/profile',
     icon: UserRound,
   },
+  {
+  label: 'Account Security',
+  path: '/customer/change-password',
+  icon: ShieldCheck,
+},
 ]
 
 function CustomerSidebar({
