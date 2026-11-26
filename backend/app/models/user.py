@@ -34,6 +34,14 @@ class User(db.Model):
     # Authentication
     password_hash = db.Column(db.String(255), nullable=False)
 
+    # JWT session security
+    token_version = db.Column(
+        db.Integer,
+        nullable=False,
+        default=1,
+        server_default="1"
+    )
+
     # Account management
     role = db.Column(
         db.String(20),

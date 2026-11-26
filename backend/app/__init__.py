@@ -35,6 +35,32 @@ def create_app(test_config=None):
     bcrypt.init_app(app)
     jwt.init_app(app)
 
+    # Reject JWTs belonging to inactive, deleted, or
+    # outdated user sessions.
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        user_id = jwt_payload.get("sub")
+        token_version = jwt_payload.get("token_version")
+
+        # Tokens without version information are invalid.
+        if type(token_version) is not int or token_version < 1:
+            return True
+
+        try:
+            user_id = int(user_id)
+        except (TypeError, ValueError):
+            return True
+
+        user = db.session.get(User, user_id)
+
+        # Reject deleted or inactive accounts.
+        if user is None or not user.is_active:
+            return True
+
+        # Reject tokens issued before a session version change.
+        return user.token_version != token_version
+
+
     # Allow frontend communication
     CORS(app)
 

@@ -250,9 +250,13 @@ def login():
             "message": "Your account is inactive. Please contact support."
         }), 403
 
-    # Generate a JWT access token.
+    # Generate a JWT access token with the user's
+    # current session version.
     access_token = create_access_token(
-        identity=str(user.id)
+        identity=str(user.id),
+        additional_claims={
+            "token_version": user.token_version
+        }
     )
 
     return jsonify({
@@ -712,13 +716,22 @@ def change_password():
             "message": "New password must be different from your current password."
         }), 400
 
+
     try:
+        # Update the password hash.
         user.set_password(new_password)
+
+        # Invalidate all previously issued JWTs.
+        user.token_version += 1
+
+        # Save both changes in the same transaction.
         db.session.commit()
 
     except Exception:
         db.session.rollback()
-        current_app.logger.exception("Failed to update account password")
+        current_app.logger.exception(
+            "Failed to update account password"
+        )
 
         return jsonify({
             "success": False,

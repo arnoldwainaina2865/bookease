@@ -1,16 +1,17 @@
 
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Eye,
   EyeOff,
   KeyRound,
   LoaderCircle,
-  CheckCircle2,
   AlertCircle,
   LockKeyhole,
 } from 'lucide-react'
 
 import { changeMyPassword } from '../../services/profileService'
+import { logoutUser } from '../../services/authService'
 
 const initialForm = {
   currentPassword: '',
@@ -19,11 +20,11 @@ const initialForm = {
 }
 
 function ChangePassword() {
+  const navigate = useNavigate()
   const [form, setForm] = useState(initialForm)
   const [visible, setVisible] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   const fields = [
     {
@@ -52,7 +53,6 @@ function ChangePassword() {
     }))
 
     setError('')
-    setSuccess('')
   }
 
   const handleSubmit = async (event) => {
@@ -61,7 +61,6 @@ function ChangePassword() {
     if (loading) return
 
     setError('')
-    setSuccess('')
 
     if (Object.values(form).some((value) => !value)) {
       setError('Please complete all password fields.')
@@ -85,18 +84,28 @@ function ChangePassword() {
 
     setLoading(true)
 
+
     try {
-      const response = await changeMyPassword(
+      await changeMyPassword(
         form.currentPassword,
         form.newPassword
       )
 
+      // Clear sensitive form data.
       setForm(initialForm)
       setVisible({})
 
-      setSuccess(
-        response.message || 'Password updated successfully.'
-      )
+      // Remove the revoked JWT and stored user information.
+      logoutUser()
+
+      // Redirect to the unified authentication page.
+      navigate('/login', {
+        replace: true,
+        state: {
+          successMessage:
+            'Password changed successfully. Please sign in with your new password.',
+        },
+      })
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -104,8 +113,11 @@ function ChangePassword() {
       )
     } finally {
       setLoading(false)
+
     }
+
   }
+
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
@@ -151,15 +163,7 @@ function ChangePassword() {
           </div>
         )}
 
-        {success && (
-          <div
-            role="status"
-            className="mb-5 flex items-start gap-3 rounded-button border border-green-200 bg-green-50 p-4 text-sm text-green-700 dark:border-green-900 dark:bg-green-950/30 dark:text-green-300"
-          >
-            <CheckCircle2 size={18} className="shrink-0" />
-            <span>{success}</span>
-          </div>
-        )}
+
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {fields.map((field) => (
@@ -210,10 +214,12 @@ function ChangePassword() {
             </div>
           ))}
 
-          <p className="text-xs text-muted">
-            Your new password must contain 8 to 72 characters
-            and must be different from your current password.
-          </p>
+            <p className="text-xs text-muted">
+                Your new password must contain 8 to 72 characters
+                and must be different from your current password.
+                Changing your password will sign you out of all
+                active sessions.
+            </p>
 
           <div className="flex justify-end border-t border-border pt-5">
             <button

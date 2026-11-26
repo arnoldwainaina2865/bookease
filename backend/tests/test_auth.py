@@ -389,6 +389,15 @@ def test_inactive_account_avatar_access(
     method
 ):
 
+    # Verify the token is valid before account deactivation.
+    response = client.get(
+        "/api/auth/me",
+        headers=customer_headers
+    )
+
+    assert response.status_code == 200
+
+    # Deactivate the account after the token has been issued.
     with app.app_context():
 
         user = db.session.get(
@@ -400,10 +409,19 @@ def test_inactive_account_avatar_access(
 
         db.session.commit()
 
+    # Verify the previously valid token is now rejected.
     response = client.open(
         "/api/auth/me/avatar",
         method=method,
         headers=customer_headers
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 401
+
+    # Verify the revoked session cannot access the profile.
+    response = client.get(
+        "/api/auth/me",
+        headers=customer_headers
+    )
+
+    assert response.status_code == 401

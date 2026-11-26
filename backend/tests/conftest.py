@@ -146,14 +146,18 @@ def customer_headers(app, customer):
 
     with app.app_context():
 
+        user = db.session.get(User, customer["id"])
+
         token = create_access_token(
-            identity=str(customer["id"])
+            identity=str(user.id),
+            additional_claims={
+                "token_version": user.token_version
+            }
         )
 
     return {
         "Authorization": f"Bearer {token}"
     }
-
 
 # --------------------------------------------------
 # PROVIDER AUTHORIZATION HEADERS
@@ -164,8 +168,13 @@ def provider_headers(app, provider):
 
     with app.app_context():
 
+        user = db.session.get(User, provider["id"])
+
         token = create_access_token(
-            identity=str(provider["id"])
+            identity=str(user.id),
+            additional_claims={
+                "token_version": user.token_version
+            }
         )
 
     return {

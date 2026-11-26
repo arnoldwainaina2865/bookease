@@ -458,7 +458,10 @@ def test_administrator_cannot_access_avatar(
         db.session.commit()
 
         token = create_access_token(
-            identity=str(admin.id)
+            identity=str(admin.id),
+            additional_claims={
+                "token_version": admin.token_version
+            }
         )
 
     response = client.open(

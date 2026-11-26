@@ -24,8 +24,9 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
-# Flask instance and local databases
+# Flask instance, database backups and local databases
 instance/
+backups/
 *.db
 *.sqlite
 *.sqlite3
