@@ -14,7 +14,8 @@ import {
 } from 'lucide-react'
 
 import { NavLink, useNavigate } from 'react-router-dom'
-import { logoutUser } from '../../services/authService'
+import { secureLogoutUser } from '../../services/authService'
+import { useState } from 'react'
 
 const navigation = [
   {
@@ -56,6 +57,7 @@ function Sidebar({
   onClose,
 }) {
   const navigate = useNavigate()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const SidebarIcon = isCollapsed
     ? PanelLeftOpen
@@ -65,10 +67,29 @@ function Sidebar({
     ? 'Expand sidebar'
     : 'Collapse sidebar'
 
-  const handleLogout = () => {
-    logoutUser()
-    navigate('/login', { replace: true })
+
+const handleLogout = async () => {
+  if (isLoggingOut) return
+
+  setIsLoggingOut(true)
+
+  try {
+    const result = await secureLogoutUser()
+
+    // Do not redirect a newly authenticated session.
+    if (localStorage.getItem('access_token')) return
+
+    navigate('/login', {
+      replace: true,
+      state: {
+        logoutWarning: result.warning,
+      },
+    })
+  } finally {
+    setIsLoggingOut(false)
   }
+}
+
 
   const getNavigationClass = ({ isActive }) => `
     flex min-h-11 w-full items-center rounded-button
@@ -292,13 +313,22 @@ function Sidebar({
         <button
           type="button"
           onClick={handleLogout}
-          aria-label="Sign out"
-          title={isCollapsed ? 'Sign out' : undefined}
+disabled={isLoggingOut}
+aria-busy={isLoggingOut}
+aria-label={isLoggingOut ? 'Signing out' : 'Sign out'}
+title={
+  isCollapsed
+    ? isLoggingOut
+      ? 'Signing out...'
+      : 'Sign out'
+    : undefined
+}
           className={`
             flex min-h-11 w-full items-center
             rounded-button py-3 text-sm text-muted
             transition-colors hover:bg-danger-soft
             hover:text-danger-text
+            disabled:cursor-not-allowed disabled:opacity-50
             ${isCollapsed
               ? 'justify-center px-2'
               : 'gap-3 px-3'}
@@ -313,8 +343,8 @@ function Sidebar({
 
           {!isCollapsed && (
             <span className="whitespace-nowrap">
-              Sign out
-            </span>
+  {isLoggingOut ? 'Signing out...' : 'Sign out'}
+</span>
           )}
         </button>
       </div>

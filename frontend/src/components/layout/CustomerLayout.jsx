@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 
 import {
@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 
 import {
-  logoutUser,
+  secureLogoutUser,
 } from '../../services/authService'
 
 import { useSidebar } from '../../hooks/useSidebar'
@@ -58,6 +58,7 @@ function CustomerSidebar({
   onToggle,
   onClose,
   onLogout,
+  isLoggingOut = false,
 }) {
   const compact = isCollapsed && !isMobile
 
@@ -177,14 +178,17 @@ function CustomerSidebar({
         })}
       </nav>
 
+
       {/* Account actions */}
       <div className="mt-6 border-t border-border pt-4">
         <button
           type="button"
           onClick={onLogout}
-          title="Sign out"
-          aria-label="Sign out"
-          className={`flex min-h-11 w-full items-center gap-3 rounded-button px-3 py-3 text-sm font-medium text-muted transition-colors hover:bg-danger-soft hover:text-danger-text ${
+          disabled={isLoggingOut}
+          aria-busy={isLoggingOut}
+          title={isLoggingOut ? 'Signing out...' : 'Sign out'}
+          aria-label={isLoggingOut ? 'Signing out' : 'Sign out'}
+          className={`flex min-h-11 w-full items-center gap-3 rounded-button px-3 py-3 text-sm font-medium text-muted transition-colors hover:bg-danger-soft hover:text-danger-text disabled:cursor-not-allowed disabled:opacity-50 ${
             compact ? 'justify-center' : ''
           }`}
         >
@@ -194,15 +198,21 @@ function CustomerSidebar({
             aria-hidden="true"
           />
 
-          {!compact && <span>Sign out</span>}
+          {!compact && (
+            <span>
+              {isLoggingOut ? 'Signing out...' : 'Sign out'}
+            </span>
+          )}
         </button>
       </div>
+
     </aside>
   )
 }
 
 function CustomerLayout({ children }) {
   const navigate = useNavigate()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const menuButtonRef = useRef(null)
   const drawerRef = useRef(null)
 
@@ -214,10 +224,29 @@ function CustomerLayout({ children }) {
     closeMobileSidebar,
   } = useSidebar()
 
-  const handleLogout = () => {
-    logoutUser()
-    navigate('/customer/login', { replace: true })
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+
+    setIsLoggingOut(true)
+
+    try {
+      const result = await secureLogoutUser()
+
+      // Do not redirect a newly authenticated session.
+      if (localStorage.getItem('access_token')) return
+
+      navigate('/login', {
+        replace: true,
+        state: {
+          logoutWarning: result.warning,
+        },
+      })
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
+
 
   // Manage mobile drawer scrolling and keyboard navigation.
   useEffect(() => {
@@ -279,16 +308,19 @@ function CustomerLayout({ children }) {
   return (
     <div className="min-h-screen bg-background text-foreground lg:flex">
 
+
       {/* Desktop sidebar */}
       <div className="sticky top-0 hidden h-screen shrink-0 lg:block">
         <CustomerSidebar
           isCollapsed={isCollapsed}
           onToggle={toggleSidebar}
           onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
         />
       </div>
 
       {/* Mobile sidebar drawer */}
+
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
 
@@ -308,10 +340,11 @@ function CustomerLayout({ children }) {
             aria-label="Customer navigation menu"
             className="relative h-dvh w-fit max-w-[85vw] shadow-elevated"
           >
-            <CustomerSidebar
+              <CustomerSidebar
               isMobile
               onClose={closeMobileSidebar}
               onLogout={handleLogout}
+              isLoggingOut={isLoggingOut}
             />
           </div>
         </div>

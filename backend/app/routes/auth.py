@@ -12,13 +12,15 @@ from werkzeug.exceptions import RequestEntityTooLarge
 from flask_jwt_extended import (
     create_access_token,
     jwt_required,
-    get_jwt_identity
+    get_jwt_identity,
+    get_jwt
 )
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db, bcrypt
-from app.models import User, Provider
+from app.models import User, Provider, RevokedToken
 from sqlalchemy import update
+from datetime import datetime, timezone
 from app.services.avatar_service import (
     save_avatar,
     get_avatar_path,
@@ -265,6 +267,85 @@ def login():
         "access_token": access_token,
         "user": serialize_personal_profile(user)
     }), 200
+
+
+# --------------------------------------------------
+# SECURE LOGOUT
+# --------------------------------------------------
+
+@auth_bp.route("/logout", methods=["POST"])
+@roles_required("customer", "provider", "admin")
+def logout():
+
+    # Extract claims from the authenticated JWT.
+    jwt_payload = get_jwt()
+
+    jti = jwt_payload["jti"]
+    user_id = int(get_jwt_identity())
+
+    expires_at = datetime.fromtimestamp(
+        jwt_payload["exp"],
+        tz=timezone.utc
+    )
+
+    # Create a record for the current access token.
+    revoked_token = RevokedToken(
+        jti=jti,
+        user_id=user_id,
+        expires_at=expires_at
+    )
+
+    try:
+        # Persist the revoked token.
+        db.session.add(revoked_token)
+        db.session.commit()
+
+    except IntegrityError:
+        db.session.rollback()
+
+        # Handle concurrent logout requests for the same JWT.
+        try:
+            existing_token = RevokedToken.query.filter_by(
+                jti=jti,
+                user_id=user_id
+            ).first()
+
+            if existing_token is not None:
+                return jsonify({
+                    "success": True,
+                    "message": "Logged out successfully."
+                }), 200
+
+        except Exception:
+            db.session.rollback()
+
+        current_app.logger.exception(
+            "Failed to persist token revocation"
+        )
+
+        return jsonify({
+            "success": False,
+            "message": "Unable to log out securely. Please try again."
+        }), 500
+
+    except Exception:
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Unexpected error during secure logout"
+        )
+
+        return jsonify({
+            "success": False,
+            "message": "Unable to log out securely. Please try again."
+        }), 500
+
+    return jsonify({
+        "success": True,
+        "message": "Logged out successfully."
+    }), 200
+
+
 
 # --------------------------------------------------
 # PERSONAL PROFILE SERIALIZER

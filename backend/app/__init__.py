@@ -10,12 +10,14 @@ from app.models import (
     Service,
     Booking,
     Review,
-    BookingActivity
+    BookingActivity,
+    RevokedToken
 )
 from app.routes.auth import auth_bp
 from app.routes.customer import customer_bp
 from app.routes.services import services_bp
 from app.routes.provider import provider_bp
+from app.commands.token_cleanup import cleanup_revoked_tokens
 
 
 def create_app(test_config=None):
@@ -35,17 +37,27 @@ def create_app(test_config=None):
     bcrypt.init_app(app)
     jwt.init_app(app)
 
-    # Reject JWTs belonging to inactive, deleted, or
-    # outdated user sessions.
+
+    # Register maintenance CLI commands.
+    app.cli.add_command(cleanup_revoked_tokens)
+
+    # Reject individually revoked JWTs and tokens belonging
+    # to inactive, deleted, or outdated user sessions.
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
         user_id = jwt_payload.get("sub")
         token_version = jwt_payload.get("token_version")
+        jti = jwt_payload.get("jti")
 
-        # Tokens without version information are invalid.
+        # Reject tokens without a valid JWT identifier.
+        if not isinstance(jti, str) or not jti or len(jti) > 36:
+            return True
+
+        # Reject tokens without valid version information.
         if type(token_version) is not int or token_version < 1:
             return True
 
+        # Validate the user identity.
         try:
             user_id = int(user_id)
         except (TypeError, ValueError):
@@ -58,9 +70,15 @@ def create_app(test_config=None):
             return True
 
         # Reject tokens issued before a session version change.
-        return user.token_version != token_version
+        if user.token_version != token_version:
+            return True
 
+        # Reject individually revoked access tokens.
+        revoked_token = RevokedToken.query.filter_by(
+            jti=jti
+        ).first()
 
+        return revoked_token is not None
     # Allow frontend communication
     CORS(app)
 

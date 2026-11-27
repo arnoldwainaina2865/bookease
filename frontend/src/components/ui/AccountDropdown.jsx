@@ -14,7 +14,7 @@ import {
 
 import {
   getCurrentUser,
-  logoutUser,
+  secureLogoutUser,
 } from '../../services/authService'
 
 import {
@@ -26,6 +26,7 @@ import { useTheme } from '../../context/useTheme'
 
 function AccountDropdown() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [user, setUser] = useState(() => getCurrentUser())
   const [avatarUrl, setAvatarUrl] = useState(null)
 
@@ -180,11 +181,31 @@ function AccountDropdown() {
     navigate(profilePath)
   }
 
-  const handleLogout = () => {
-    setIsOpen(false)
-    logoutUser()
-    navigate('/login', { replace: true })
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+
+    setIsLoggingOut(true)
+
+    try {
+      const result = await secureLogoutUser()
+
+      setIsOpen(false)
+
+      // Do not redirect a newly authenticated session.
+      if (localStorage.getItem('access_token')) return
+
+      navigate('/login', {
+        replace: true,
+        state: {
+          logoutWarning: result.warning,
+        },
+      })
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
+
 
   const handleThemeChange = () => {
     toggleTheme()
@@ -350,21 +371,26 @@ function AccountDropdown() {
             </button>
           </div>
 
+
           {/* Sign out */}
           <div className="border-t border-border p-2">
             <button
               type="button"
               onClick={handleLogout}
-              className="flex min-h-11 w-full items-center gap-3 rounded-button px-3 py-2.5 text-sm font-medium text-danger-text transition-colors hover:bg-danger-soft"
+              disabled={isLoggingOut}
+              aria-busy={isLoggingOut}
+              aria-label={isLoggingOut ? 'Signing out' : 'Sign out'}
+              className="flex min-h-11 w-full items-center gap-3 rounded-button px-3 py-2.5 text-sm font-medium text-danger-text transition-colors hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-50"
             >
               <LogOut
                 size={18}
                 strokeWidth={1.8}
                 aria-hidden="true"
               />
-              Sign out
+              {isLoggingOut ? 'Signing out...' : 'Sign out'}
             </button>
           </div>
+
         </div>
       )}
     </div>

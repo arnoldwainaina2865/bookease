@@ -11,6 +11,7 @@ import {
   Phone,
   MapPin,
   ArrowRight,
+  TriangleAlert,
 } from 'lucide-react'
 
 import {
@@ -47,6 +48,11 @@ function UnifiedAuth() {
   const [success, setSuccess] = useState(
     location.state?.successMessage || ''
   )
+
+    const [logoutWarning, setLogoutWarning] = useState(
+    location.state?.logoutWarning || ''
+  )
+
   const [loading, setLoading] = useState(false)
 
   const handleChange = (event) => {
@@ -329,6 +335,39 @@ function UnifiedAuth() {
           </div>
 
           {/* Feedback */}
+
+          {logoutWarning && (
+            <div
+              role="alert"
+              className="mb-5 flex items-start gap-3 rounded-button border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-300"
+            >
+              <TriangleAlert
+                size={19}
+                strokeWidth={1.8}
+                className="mt-0.5 shrink-0"
+                aria-hidden="true"
+              />
+
+              <div className="min-w-0">
+                <p className="font-semibold">
+                  Session security notice
+                </p>
+
+                <p className="mt-1 leading-relaxed">
+                  {logoutWarning}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setLogoutWarning('')}
+                  className="mt-2 text-xs font-medium underline underline-offset-2"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="mb-5 rounded-button border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger-text">
               {error}
