@@ -17,6 +17,7 @@ from app.routes.auth import auth_bp
 from app.routes.customer import customer_bp
 from app.routes.services import services_bp
 from app.routes.provider import provider_bp
+from app.routes.analytics import analytics_bp
 from app.commands.token_cleanup import cleanup_revoked_tokens
 from app.commands.password_reset_cleanup import cleanup_password_reset_tokens
 
@@ -90,6 +91,7 @@ def create_app(test_config=None):
     app.register_blueprint(customer_bp)
     app.register_blueprint(services_bp)
     app.register_blueprint(provider_bp)
+    app.register_blueprint(analytics_bp)
 
     # Health-check endpoint
     @app.route("/api/health", methods=["GET"])
