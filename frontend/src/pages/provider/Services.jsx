@@ -1,3 +1,6 @@
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { useConfirm } from '../../hooks/useConfirm'
+
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
@@ -35,6 +38,8 @@ function formatCurrency(amount) {
 }
 
 function Services() {
+  const { confirm, dialogProps } = useConfirm()
+
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -222,9 +227,13 @@ function Services() {
   }
 
   const handleDeactivate = async (service) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to deactivate "${service.name}"?`
-    )
+    const confirmed = await confirm({
+      title: 'Deactivate service?',
+      message: `Are you sure you want to deactivate "${service.name}"? Customers will no longer be able to book this service while it is inactive.`,
+      confirmLabel: 'Deactivate service',
+      cancelLabel: 'Keep service active',
+      destructive: true,
+    })
 
     if (!confirmed) return
 
@@ -725,6 +734,7 @@ function Services() {
           </div>
         </div>
       )}
+    <ConfirmDialog {...dialogProps} />
     </DashboardLayout>
   )
 }

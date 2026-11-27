@@ -1,3 +1,6 @@
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { useConfirm } from '../../hooks/useConfirm'
+
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -391,6 +394,8 @@ function BookingDetailsModal({
 
 
 function Bookings() {
+  const { confirm, dialogProps } = useConfirm()
+
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -607,7 +612,26 @@ function Bookings() {
       complete: 'Mark this booking as completed?',
     }
 
-    if (!window.confirm(messages[action])) {
+    const titles = {
+      confirm: 'Confirm booking?',
+      reject: 'Reject booking?',
+      complete: 'Complete booking?',
+    }
+
+    const labels = {
+      confirm: 'Confirm booking',
+      reject: 'Reject booking',
+      complete: 'Mark as completed',
+    }
+
+    if (!messages[action]) return
+
+    if (!(await confirm({
+      title: titles[action],
+      message: messages[action],
+      confirmLabel: labels[action],
+      destructive: action === 'reject',
+    }))) {
       return
     }
 
@@ -1108,6 +1132,7 @@ function Bookings() {
 />
       )}
 
+    <ConfirmDialog {...dialogProps} />
     </DashboardLayout>
   )
 }

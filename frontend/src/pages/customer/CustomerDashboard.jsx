@@ -1,3 +1,6 @@
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { useConfirm } from '../../hooks/useConfirm'
+
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -11,6 +14,8 @@ import {
 } from '../../services/customerApiService'
 
 function CustomerDashboard() {
+  const { confirm, dialogProps } = useConfirm()
+
   const user = getCurrentUser()
 
   const [services, setServices] = useState([])
@@ -51,9 +56,13 @@ const [cancellingBookingId, setCancellingBookingId] = useState(null)
   }, [])
 
   const handleCancelBooking = async (booking) => {
-  const confirmed = window.confirm(
-    `Are you sure you want to cancel your ${booking.service} appointment?`
-  )
+  const confirmed = await confirm({
+    title: 'Cancel appointment?',
+    message: `Are you sure you want to cancel your ${booking.service} appointment?`,
+    confirmLabel: 'Cancel appointment',
+    cancelLabel: 'Keep appointment',
+    destructive: true,
+  })
 
   if (!confirmed) return
 
@@ -326,6 +335,7 @@ const [cancellingBookingId, setCancellingBookingId] = useState(null)
           )}
         </section>
       </div>
+    <ConfirmDialog {...dialogProps} />
     </div>
   )
 }

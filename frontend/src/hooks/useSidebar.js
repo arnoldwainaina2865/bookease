@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 const STORAGE_KEY = 'bookease-sidebar-collapsed'
 
@@ -28,25 +28,25 @@ export function useSidebar() {
     }
   }, [isCollapsed])
 
-  const toggleSidebar = () => {
+  const toggleSidebar = useCallback(() => {
     setIsCollapsed((previous) => !previous)
-  }
+  }, [])
 
-  const expandSidebar = () => {
+  const expandSidebar = useCallback(() => {
     setIsCollapsed(false)
-  }
+  }, [])
 
-  const collapseSidebar = () => {
+  const collapseSidebar = useCallback(() => {
     setIsCollapsed(true)
-  }
+  }, [])
 
-  const openMobileSidebar = () => {
+  const openMobileSidebar = useCallback(() => {
     setIsMobileOpen(true)
-  }
+  }, [])
 
-  const closeMobileSidebar = () => {
+  const closeMobileSidebar = useCallback(() => {
     setIsMobileOpen(false)
-  }
+  }, [])
 
   return {
     isCollapsed,

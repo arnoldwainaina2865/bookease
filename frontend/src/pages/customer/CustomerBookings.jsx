@@ -1,3 +1,6 @@
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { useConfirm } from '../../hooks/useConfirm'
+
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -95,6 +98,8 @@ const STATUS_TABS = [
 ]
 
 function CustomerBookings() {
+  const { confirm, dialogProps } = useConfirm()
+
   const [bookings, setBookings] = useState([])
   const [activeStatus, setActiveStatus] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -158,9 +163,13 @@ const handleStatusChange = (status) => {
 
 // Cancel a pending or confirmed appointment.
 const handleCancelBooking = async (booking) => {
-  const confirmed = window.confirm(
-    `Are you sure you want to cancel your ${booking.service} appointment?`
-  )
+  const confirmed = await confirm({
+    title: 'Cancel appointment?',
+    message: `Are you sure you want to cancel your ${booking.service} appointment?`,
+    confirmLabel: 'Cancel appointment',
+    cancelLabel: 'Keep appointment',
+    destructive: true,
+  })
 
   if (!confirmed) return
 
@@ -473,7 +482,8 @@ const filteredBookings = bookings.filter((booking) => {
 
 
 
-      </div>
+      <ConfirmDialog {...dialogProps} />
+    </div>
   )
 }
 
