@@ -20,6 +20,7 @@ import MetricCard from '../../components/analytics/MetricCard'
 import TrendChart from '../../components/analytics/TrendChart'
 import BookingDistribution from '../../components/analytics/BookingDistribution'
 import AppointmentHeatmap from '../../components/analytics/AppointmentHeatmap'
+import ReportActions from '../../components/analytics/ReportActions'
 
 import {
   formatCurrency,
@@ -68,7 +69,10 @@ export default function Analytics() {
         )
 
         if (!controller.signal.aborted) {
-          setData(result.analytics)
+          setData({
+            ...result.analytics,
+            provider: result.provider,
+          })
         }
       } catch (err) {
         if (!controller.signal.aborted) {
@@ -264,6 +268,14 @@ export default function Analytics() {
             )}
           </form>
         )}
+
+        <ReportActions
+          key={data
+            ? `${data.period.start_date}-${data.period.end_date}`
+            : 'unavailable'}
+          data={data}
+          disabled={loading || Boolean(error)}
+        />
 
         {loading && (
           <div aria-busy="true" aria-label="Loading analytics" className="space-y-5">

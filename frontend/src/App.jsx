@@ -1,3 +1,4 @@
+import { lazy as lazyAnalytics, Suspense as AnalyticsSuspense } from 'react'
 
 import {
   BrowserRouter,
@@ -11,7 +12,7 @@ import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
 
 import ProviderDashboard from './pages/provider/ProviderDashboard'
-import Analytics from './pages/provider/Analytics'
+
 import Bookings from './pages/provider/Bookings'
 import Services from './pages/provider/Services'
 import Customers from './pages/provider/Customers'
@@ -119,7 +120,18 @@ function App() {
           path="/provider/analytics"
           element={
             <ProviderRoute>
-              <Analytics />
+              <AnalyticsSuspense
+                fallback={
+                  <div
+                    role="status"
+                    className="flex min-h-screen items-center justify-center bg-background text-muted"
+                  >
+                    Loading analytics...
+                  </div>
+                }
+              >
+                <Analytics />
+              </AnalyticsSuspense>
             </ProviderRoute>
           }
         />
@@ -245,3 +257,8 @@ function App() {
 }
 
 export default App
+
+
+const Analytics = lazyAnalytics(
+  () => import('./pages/provider/Analytics')
+)
