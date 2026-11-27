@@ -18,6 +18,7 @@ from app.routes.customer import customer_bp
 from app.routes.services import services_bp
 from app.routes.provider import provider_bp
 from app.commands.token_cleanup import cleanup_revoked_tokens
+from app.commands.password_reset_cleanup import cleanup_password_reset_tokens
 
 
 def create_app(test_config=None):
@@ -41,6 +42,7 @@ def create_app(test_config=None):
 
     # Register maintenance CLI commands.
     app.cli.add_command(cleanup_revoked_tokens)
+    app.cli.add_command(cleanup_password_reset_tokens)
 
     # Reject individually revoked JWTs and tokens belonging
     # to inactive, deleted, or outdated user sessions.
@@ -96,5 +98,20 @@ def create_app(test_config=None):
             "success": True,
             "message": "BookEase API is running!"
         }), 200
+
+    @app.errorhandler(429)
+    def handle_rate_limit(error):
+        response = error.get_response()
+
+        response.set_data(app.json.dumps({
+            "success": False,
+            "message": (
+                "Too many requests. Please try again later."
+            )
+        }))
+
+        response.content_type = "application/json"
+
+        return response
 
     return app

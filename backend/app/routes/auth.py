@@ -40,11 +40,20 @@ from app.services.avatar_service import (
     AvatarValidationError
 )
 
+from app.utils.auth_security import (
+    valid_password_input,
+    valid_new_password,
+    email_rate_limit_key,
+    authenticated_rate_limit_key
+)
+
+
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 
 
 @auth_bp.route("/register", methods=["POST"])
+@limiter.limit("5 per hour")
 def register():
     data = request.get_json(silent=True)
 
@@ -93,10 +102,10 @@ def register():
             "message": "Name or email exceeds the allowed length."
         }), 400
 
-    if len(password) < 8 or len(password) > 72:
+    if not valid_new_password(password):
         return jsonify({
             "success": False,
-            "message": "Password must contain between 8 and 72 characters."
+            "message": "Password must contain at least 8 characters and must not exceed 72 bytes."
         }), 400
 
     # Validate optional phone number
@@ -219,6 +228,11 @@ def register():
 
 
 @auth_bp.route("/login", methods=["POST"])
+@limiter.limit("10 per 15 minutes")
+@limiter.limit(
+    "10 per 15 minutes",
+    key_func=email_rate_limit_key
+)
 def login():
     data = request.get_json(silent=True)
 
@@ -246,6 +260,12 @@ def login():
             "success": False,
             "message": "Email and password are required."
         }), 400
+
+    if not valid_password_input(password) or len(email) > 255:
+        return jsonify({
+            "success": False,
+            "message": "Invalid email or password."
+        }), 401
 
     # Find the account using its email address.
     user = User.query.filter_by(email=email).first()
@@ -757,8 +777,16 @@ def remove_current_user_avatar():
 # --------------------------------------------------
 
 @auth_bp.route("/change-password", methods=["PUT"])
+@limiter.limit("5 per 15 minutes")
 @roles_required("customer", "provider", "admin")
 def change_password():
+    with limiter.limit(
+        "5 per 15 minutes",
+        key_func=authenticated_rate_limit_key,
+        scope="change-password-account"
+    ):
+        pass
+
     data = request.get_json(silent=True)
 
     if not isinstance(data, dict):
@@ -782,10 +810,10 @@ def change_password():
             "message": "Current password and new password are required."
         }), 400
 
-    if len(new_password) < 8 or len(new_password) > 72:
+    if not valid_new_password(new_password):
         return jsonify({
             "success": False,
-            "message": "New password must contain between 8 and 72 characters."
+            "message": "New password must contain at least 8 characters and must not exceed 72 bytes."
         }), 400
 
     user_id = int(get_jwt_identity())
@@ -797,7 +825,10 @@ def change_password():
             "message": "User account not found or inactive."
         }), 403
 
-    if not user.check_password(current_password):
+    if (
+        not valid_password_input(current_password)
+        or not user.check_password(current_password)
+    ):
         return jsonify({
             "success": False,
             "message": "Current password is incorrect."
@@ -811,18 +842,61 @@ def change_password():
 
 
     try:
-        # Update the password hash.
-        user.set_password(new_password)
+        # Capture the version associated with the authenticated JWT.
+        from flask_jwt_extended import get_jwt
 
-        # Invalidate all previously issued JWTs.
-        user.token_version += 1
+        expected_version = get_jwt().get("token_version")
 
-        # Save both changes in the same transaction.
+        new_password_hash = bcrypt.generate_password_hash(
+            new_password
+        ).decode("utf-8")
+
+        changed_at = datetime.now(timezone.utc)
+
+        # Update only if the authenticated session remains current.
+        result = db.session.execute(
+            update(User)
+            .where(
+                User.id == user_id,
+                User.is_active.is_(True),
+                User.token_version == expected_version
+            )
+            .values(
+                password_hash=new_password_hash,
+                token_version=User.token_version + 1,
+                updated_at=changed_at
+            )
+            .execution_options(synchronize_session=False)
+        )
+
+        if result.rowcount != 1:
+            db.session.rollback()
+
+            return jsonify({
+                "success": False,
+                "message": (
+                    "Your account security settings have changed. "
+                    "Please sign in again."
+                )
+            }), 409
+
+        # Invalidate outstanding password recovery links.
+        db.session.execute(
+            update(PasswordResetToken)
+            .where(
+                PasswordResetToken.user_id == user_id,
+                PasswordResetToken.used_at.is_(None)
+            )
+            .values(used_at=changed_at)
+            .execution_options(synchronize_session=False)
+        )
+
+        # Commit the password change and token invalidation together.
         db.session.commit()
 
     except Exception:
         db.session.rollback()
-        current_app.logger.exception(
+        current_app.logger.error(
             "Failed to update account password"
         )
 
@@ -878,6 +952,20 @@ def forgot_password():
         "success": True,
         "message": PASSWORD_RECOVERY_MESSAGE
     }
+
+    # Apply account-specific throttling before checking
+    # whether the email belongs to an existing account.
+    from flask_limiter.errors import RateLimitExceeded
+
+    try:
+        with limiter.limit(
+            "3 per 15 minutes",
+            key_func=email_rate_limit_key,
+            scope="password-recovery-account"
+        ):
+            pass
+    except RateLimitExceeded:
+        return jsonify(generic_response), 200
 
     user = User.query.filter_by(email=email).first()
 

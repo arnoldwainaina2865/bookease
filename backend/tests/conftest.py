@@ -7,7 +7,7 @@ import pytest
 from flask_jwt_extended import create_access_token
 
 from app import create_app
-from app.extensions import db
+from app.extensions import db, limiter
 from app.models import User, Provider
 
 
@@ -26,6 +26,8 @@ def app(tmp_path):
 
     application = create_app({
         "TESTING": True,
+        "RATELIMIT_STORAGE_URI": "memory://",
+        "RATELIMIT_ENABLED": True,
         "SECRET_KEY": token_hex(32),
         "JWT_SECRET_KEY": token_hex(32),
         "SQLALCHEMY_DATABASE_URI": (
@@ -43,12 +45,14 @@ def app(tmp_path):
         ).resolve() == database_path.resolve()
 
         db.create_all()
+        limiter.reset()
 
     try:
         yield application
 
     finally:
         with application.app_context():
+            limiter.reset()
             db.session.remove()
             db.engine.dispose()
 
