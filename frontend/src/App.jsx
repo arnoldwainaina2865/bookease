@@ -11,6 +11,7 @@ import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
 
 import ProviderDashboard from './pages/provider/ProviderDashboard'
+import Analytics from './pages/provider/Analytics'
 import Bookings from './pages/provider/Bookings'
 import Services from './pages/provider/Services'
 import Customers from './pages/provider/Customers'
@@ -110,6 +111,15 @@ function App() {
           element={
             <ProviderRoute>
               <ProviderDashboard />
+            </ProviderRoute>
+          }
+        />
+
+        <Route
+          path="/provider/analytics"
+          element={
+            <ProviderRoute>
+              <Analytics />
             </ProviderRoute>
           }
         />

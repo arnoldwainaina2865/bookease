@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  ChartNoAxesCombined,
   CalendarDays,
   BriefcaseBusiness,
   Users,
@@ -30,6 +31,11 @@ const navigation = [
         name: 'Bookings',
         icon: CalendarDays,
         path: '/provider/bookings',
+      },
+      {
+        name: 'Analytics & Reports',
+        icon: ChartNoAxesCombined,
+        path: '/provider/analytics',
       },
     ],
   },
