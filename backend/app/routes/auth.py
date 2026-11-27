@@ -17,9 +17,21 @@ from flask_jwt_extended import (
 )
 from sqlalchemy.exc import IntegrityError
 
-from app.extensions import db, bcrypt
-from app.models import User, Provider, RevokedToken
+from app.extensions import db, bcrypt, limiter
+
+from app.models import (
+    User,
+    Provider,
+    RevokedToken,
+    PasswordResetToken
+)
+
+from app.services.email_service import (
+    send_password_reset_email
+)
 from sqlalchemy import update
+import hashlib
+import secrets
 from datetime import datetime, timezone
 from app.services.avatar_service import (
     save_avatar,
@@ -822,4 +834,295 @@ def change_password():
     return jsonify({
         "success": True,
         "message": "Password changed successfully."
+    }), 200
+
+# --------------------------------------------------
+# PASSWORD RECOVERY
+# --------------------------------------------------
+
+PASSWORD_RECOVERY_MESSAGE = (
+    "If an eligible account exists for this email, "
+    "you will receive password reset instructions."
+)
+
+
+@auth_bp.route("/forgot-password", methods=["POST"])
+@limiter.limit("5 per 15 minutes")
+def forgot_password():
+
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({
+            "success": False,
+            "message": "A valid JSON request body is required."
+        }), 400
+
+    email = data.get("email")
+
+    if not isinstance(email, str):
+        return jsonify({
+            "success": False,
+            "message": "A valid email address is required."
+        }), 400
+
+    email = email.strip().lower()
+
+    if not email or len(email) > 255 or "@" not in email:
+        return jsonify({
+            "success": False,
+            "message": "A valid email address is required."
+        }), 400
+
+    generic_response = {
+        "success": True,
+        "message": PASSWORD_RECOVERY_MESSAGE
+    }
+
+    user = User.query.filter_by(email=email).first()
+
+    # Never disclose whether an account exists.
+    if (
+        user is None
+        or not user.is_active
+        or user.role not in ("customer", "provider")
+    ):
+        return jsonify(generic_response), 200
+
+    # Generate a cryptographically secure random token.
+    raw_token = secrets.token_urlsafe(32)
+
+    # Store only the SHA-256 hash.
+    token_hash = hashlib.sha256(
+        raw_token.encode("utf-8")
+    ).hexdigest()
+
+    now = datetime.now(timezone.utc)
+
+    reset_token = PasswordResetToken(
+        user_id=user.id,
+        token_hash=token_hash,
+        token_version=user.token_version,
+        created_at=now,
+        expires_at=(
+            now
+            + current_app.config[
+                "PASSWORD_RESET_TOKEN_EXPIRES"
+            ]
+        )
+    )
+
+    try:
+        db.session.add(reset_token)
+        db.session.commit()
+
+    except Exception:
+        db.session.rollback()
+
+        current_app.logger.error(
+            "Unable to persist password recovery token."
+        )
+
+        return jsonify(generic_response), 200
+
+    try:
+        send_password_reset_email(email, raw_token)
+
+    except Exception:
+        # Invalidate the token if email delivery fails.
+        db.session.rollback()
+
+        try:
+            db.session.execute(
+                update(PasswordResetToken)
+                .where(
+                    PasswordResetToken.token_hash == token_hash,
+                    PasswordResetToken.used_at.is_(None)
+                )
+                .values(
+                    used_at=datetime.now(timezone.utc)
+                )
+            )
+
+            db.session.commit()
+
+        except Exception:
+            db.session.rollback()
+
+            current_app.logger.error(
+                "Unable to invalidate undelivered recovery token."
+            )
+
+        # Avoid logging credentials or raw recovery tokens.
+        current_app.logger.error(
+            "Password recovery email delivery failed."
+        )
+
+    return jsonify(generic_response), 200
+
+@auth_bp.route("/reset-password", methods=["POST"])
+@limiter.limit("10 per 15 minutes")
+def reset_password():
+
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({
+            "success": False,
+            "message": "A valid JSON request body is required."
+        }), 400
+
+    token = data.get("token")
+    new_password = data.get("new_password")
+
+    if (
+        not isinstance(token, str)
+        or not isinstance(new_password, str)
+    ):
+        return jsonify({
+            "success": False,
+            "message": "Reset token and new password are required."
+        }), 400
+
+    invalid_token_response = {
+        "success": False,
+        "message": "This password reset link is invalid or expired."
+    }
+
+    if len(token) != 43:
+        return jsonify(invalid_token_response), 400
+
+    # bcrypt has a maximum input length of 72 bytes.
+    try:
+        password_bytes = new_password.encode("utf-8")
+        token_hash = hashlib.sha256(
+            token.encode("utf-8")
+        ).hexdigest()
+
+    except UnicodeError:
+        return jsonify({
+            "success": False,
+            "message": "Invalid input encoding."
+        }), 400
+
+    if (
+        len(new_password) < 8
+        or len(password_bytes) > 72
+    ):
+        return jsonify({
+            "success": False,
+            "message": (
+                "Password must contain at least 8 characters "
+                "and must not exceed 72 bytes."
+            )
+        }), 400
+
+    try:
+        now = datetime.now(timezone.utc)
+
+        reset_token = PasswordResetToken.query.filter(
+            PasswordResetToken.token_hash == token_hash,
+            PasswordResetToken.used_at.is_(None),
+            PasswordResetToken.expires_at > now
+        ).first()
+
+        if reset_token is None:
+            return jsonify(invalid_token_response), 400
+
+        user = db.session.get(User, reset_token.user_id)
+
+        if (
+            user is None
+            or not user.is_active
+            or user.role not in ("customer", "provider")
+            or user.token_version != reset_token.token_version
+        ):
+            return jsonify(invalid_token_response), 400
+
+        if user.check_password(new_password):
+            return jsonify({
+                "success": False,
+                "message": (
+                    "New password must be different "
+                    "from your current password."
+                )
+            }), 400
+
+        new_password_hash = bcrypt.generate_password_hash(
+            new_password
+        ).decode("utf-8")
+
+        # Atomically update the password only if the
+        # account's session version has not changed.
+        user_update = db.session.execute(
+            update(User)
+            .where(
+                User.id == user.id,
+                User.is_active.is_(True),
+                User.token_version == reset_token.token_version
+            )
+            .values(
+                password_hash=new_password_hash,
+                token_version=User.token_version + 1,
+                updated_at=datetime.now(timezone.utc)
+            )
+        )
+
+        if user_update.rowcount != 1:
+            db.session.rollback()
+            return jsonify(invalid_token_response), 400
+
+        # Atomically consume the reset token.
+        consumed_at = datetime.now(timezone.utc)
+
+        token_update = db.session.execute(
+            update(PasswordResetToken)
+            .where(
+                PasswordResetToken.id == reset_token.id,
+                PasswordResetToken.used_at.is_(None),
+                PasswordResetToken.expires_at > consumed_at
+            )
+            .values(used_at=consumed_at)
+            .execution_options(synchronize_session=False)
+        )
+
+        if token_update.rowcount != 1:
+            db.session.rollback()
+            return jsonify(invalid_token_response), 400
+
+        # Invalidate all other outstanding recovery links.
+        db.session.execute(
+            update(PasswordResetToken)
+            .where(
+                PasswordResetToken.user_id == user.id,
+                PasswordResetToken.used_at.is_(None)
+            )
+            .values(used_at=consumed_at)
+            .execution_options(synchronize_session=False)
+        )
+
+        # Commit password update, JWT revocation and
+        # recovery token consumption together.
+        db.session.commit()
+
+    except Exception:
+        db.session.rollback()
+
+        current_app.logger.error(
+            "Password recovery transaction failed."
+        )
+
+        return jsonify({
+            "success": False,
+            "message": (
+                "Unable to reset password. Please try again."
+            )
+        }), 500
+
+    return jsonify({
+        "success": True,
+        "message": (
+            "Password reset successfully. "
+            "Please sign in with your new password."
+        )
     }), 200

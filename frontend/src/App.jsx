@@ -7,6 +7,8 @@ import {
 } from 'react-router-dom'
 
 import UnifiedAuth from './pages/auth/UnifiedAuth'
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ResetPassword from './pages/auth/ResetPassword'
 
 import ProviderDashboard from './pages/provider/ProviderDashboard'
 import Bookings from './pages/provider/Bookings'
@@ -93,6 +95,10 @@ function App() {
 
         {/* Unified authentication */}
         <Route path="/login" element={<AuthRoute />} />
+
+        {/* Public password recovery */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/register" element={<AuthRoute />} />
         <Route path="/customer/login" element={<AuthRoute />} />
         <Route path="/customer/register" element={<AuthRoute />} />

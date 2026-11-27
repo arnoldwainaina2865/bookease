@@ -3,7 +3,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 
 from config import Config
-from app.extensions import db, migrate, bcrypt, jwt
+from app.extensions import db, migrate, bcrypt, jwt, limiter
 from app.models import (
     User,
     Provider,
@@ -36,6 +36,7 @@ def create_app(test_config=None):
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     jwt.init_app(app)
+    limiter.init_app(app)
 
 
     # Register maintenance CLI commands.

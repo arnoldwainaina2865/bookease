@@ -40,6 +40,27 @@ class Config:
 
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
 
+        # Password recovery
+    PASSWORD_RESET_TOKEN_EXPIRES = timedelta(minutes=30)
+
+    FRONTEND_URL = os.getenv(
+        "FRONTEND_URL",
+        "http://localhost:5173"
+    ).rstrip("/")
+
+    # Email delivery
+    SMTP_HOST = os.getenv("SMTP_HOST", "")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "")
+
+    SMTP_USE_TLS = (
+        os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+    )
+
+    SMTP_TIMEOUT = 10
+
     # Profile picture storage
     AVATAR_UPLOAD_FOLDER = BASE_DIR / "instance" / "uploads" / "avatars"
 
@@ -57,3 +78,11 @@ class Config:
 
     # Processed image quality
     AVATAR_IMAGE_QUALITY = 85
+
+        # Authentication rate limiting
+    RATELIMIT_STORAGE_URI = os.getenv(
+        "RATELIMIT_STORAGE_URI",
+        "memory://"
+    )
+
+    RATELIMIT_HEADERS_ENABLED = True

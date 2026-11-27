@@ -1,7 +1,7 @@
 
 import { useState } from 'react'
 import ThemeToggle from '../../components/ui/ThemeToggle'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   Scissors,
   Mail,
@@ -576,6 +576,18 @@ function UnifiedAuth() {
                 />
               </div>
             </div>
+
+            {mode === 'login' && (
+              <div className="flex justify-end">
+                <Link
+                  to="/forgot-password"
+                  state={{ email: formData.email }}
+                  className="text-sm font-medium text-primary transition hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            )}
 
             {/* Confirm password */}
             {mode === 'register' && (

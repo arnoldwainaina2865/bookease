@@ -123,3 +123,22 @@ export const registerUser = async (userData) => {
 
 // Keep this alias so the existing registration page still works.
 export const registerCustomer = registerUser
+
+// Request a password recovery email.
+export const requestPasswordReset = async (email) => {
+  const response = await api.post('/auth/forgot-password', {
+    email,
+  })
+
+  return response.data
+}
+
+// Reset a password using a single-use recovery token.
+export const resetUserPassword = async (token, newPassword) => {
+  const response = await api.post('/auth/reset-password', {
+    token,
+    new_password: newPassword,
+  })
+
+  return response.data
+}
