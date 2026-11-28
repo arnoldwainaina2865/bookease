@@ -1,3 +1,5 @@
+from decimal import Decimal, InvalidOperation
+import re
 
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -63,9 +65,66 @@ def get_services():
             Provider.location.ilike(f"%{location}%")
         )
 
+
+    # Validate optional price filters.
+    def parse_price(name):
+        raw = request.args.get(name, "").strip()
+
+        if not raw:
+            return None
+
+        if not re.fullmatch(r"[0-9]{1,8}(?:\.[0-9]{1,2})?", raw):
+            raise ValueError(
+                f"{name} must be a non-negative price "
+                "with at most two decimal places."
+            )
+
+        return Decimal(raw)
+
+    try:
+        min_price = parse_price("min_price")
+        max_price = parse_price("max_price")
+
+        if (
+            min_price is not None
+            and max_price is not None
+            and min_price > max_price
+        ):
+            raise ValueError(
+                "Minimum price cannot exceed maximum price."
+            )
+
+    except (ValueError, InvalidOperation) as error:
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 400
+
+    if min_price is not None:
+        query = query.filter(Service.price >= min_price)
+
+    if max_price is not None:
+        query = query.filter(Service.price <= max_price)
+
+    sort = request.args.get("sort", "newest")
+
+    sort_options = {
+        "newest": Service.created_at.desc(),
+        "price_asc": Service.price.asc(),
+        "price_desc": Service.price.desc(),
+        "name": Service.name.asc()
+    }
+
+    if sort not in sort_options:
+        return jsonify({
+            "success": False,
+            "message": "Invalid sorting option."
+        }), 400
+
     # Apply pagination
     pagination = query.order_by(
-        Service.created_at.desc()
+        sort_options[sort],
+        Service.id.desc()
     ).paginate(
         page=page,
         per_page=per_page,
@@ -332,3 +391,133 @@ def get_service_availability(service_id):
 
     return jsonify(result), 200
 
+
+
+# --------------------------------------------------
+# PUBLIC MARKETPLACE SERIALIZATION
+# --------------------------------------------------
+
+def serialize_public_provider(provider):
+    return {
+        "id": provider.id,
+        "business_name": provider.business_name,
+        "category": provider.category,
+        "location": provider.location,
+        "is_verified": provider.is_verified
+    }
+
+
+def serialize_public_service(service):
+    return {
+        "id": service.id,
+        "name": service.name,
+        "description": service.description,
+        "price": str(service.price),
+        "duration_minutes": service.duration_minutes,
+        "provider": serialize_public_provider(service.provider)
+    }
+
+
+# --------------------------------------------------
+# GET AN INDIVIDUAL PUBLIC SERVICE
+# --------------------------------------------------
+
+@services_bp.route("/<int:service_id>", methods=["GET"])
+def get_public_service(service_id):
+
+    service = (
+        Service.query
+        .join(Provider)
+        .filter(
+            Service.id == service_id,
+            Service.is_active.is_(True),
+            Provider.is_available.is_(True)
+        )
+        .first()
+    )
+
+    if service is None:
+        return jsonify({
+            "success": False,
+            "message": "Service is unavailable or does not exist."
+        }), 404
+
+    return jsonify({
+        "success": True,
+        "service": serialize_public_service(service)
+    }), 200
+
+
+# --------------------------------------------------
+# GET A PUBLIC PROVIDER PROFILE
+# --------------------------------------------------
+
+@services_bp.route(
+    "/providers/<int:provider_id>",
+    methods=["GET"]
+)
+def get_public_provider(provider_id):
+
+    provider = Provider.query.filter_by(
+        id=provider_id,
+        is_available=True
+    ).first()
+
+    if provider is None:
+        return jsonify({
+            "success": False,
+            "message": "Business is unavailable or does not exist."
+        }), 404
+
+    services = (
+        Service.query
+        .filter_by(
+            provider_id=provider.id,
+            is_active=True
+        )
+        .order_by(Service.name.asc(), Service.id.asc())
+        .all()
+    )
+
+    hours = (
+        ProviderBusinessHours.query
+        .filter_by(provider_id=provider.id)
+        .order_by(ProviderBusinessHours.day_of_week.asc())
+        .all()
+    )
+
+    profile = serialize_public_provider(provider)
+
+    profile.update({
+        "description": provider.description,
+        "timezone": "Africa/Nairobi",
+        "total_services": len(services)
+    })
+
+    business_hours = [
+        {
+            "day_of_week": row.day_of_week,
+            "is_closed": row.is_closed,
+            "opening_time": (
+                row.opening_time.strftime("%H:%M")
+                if row.opening_time and not row.is_closed
+                else None
+            ),
+            "closing_time": (
+                row.closing_time.strftime("%H:%M")
+                if row.closing_time and not row.is_closed
+                else None
+            )
+        }
+        for row in hours
+    ]
+
+    return jsonify({
+        "success": True,
+        "provider": profile,
+        "services": [
+            serialize_public_service(service)
+            for service in services
+        ],
+        "business_hours": business_hours
+    }), 200
