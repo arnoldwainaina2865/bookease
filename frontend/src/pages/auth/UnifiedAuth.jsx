@@ -24,7 +24,11 @@ function UnifiedAuth() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [role, setRole] = useState('customer')
+  const [role, setRole] = useState(
+    new URLSearchParams(location.search).get('role') === 'provider'
+      ? 'provider'
+      : 'customer'
+  )
   const [mode, setMode] = useState(
     location.pathname === '/customer/register' ||
     location.pathname === '/register'
@@ -101,7 +105,11 @@ function UnifiedAuth() {
         navigate(
           role === 'provider'
             ? '/provider/dashboard'
-            : '/customer/dashboard',
+            : /^[1-9][0-9]*$/.test(
+                new URLSearchParams(location.search).get('serviceId') || ''
+              )
+              ? `/customer/book?serviceId=${new URLSearchParams(location.search).get('serviceId')}`
+              : '/customer/dashboard',
           { replace: true }
         )
 

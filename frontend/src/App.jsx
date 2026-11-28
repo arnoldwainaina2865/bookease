@@ -93,7 +93,39 @@ function App() {
     <BrowserRouter>
       <Routes>
 
-        <Route path="/" element={<HomeRedirect />} />
+        <Route
+          path="/"
+          element={
+            <AnalyticsSuspense
+              fallback={
+                <div
+                  role="status"
+                  className="flex min-h-screen items-center justify-center bg-background text-muted"
+                >
+                  Loading BookEase...
+                </div>
+              }
+            >
+              <LandingPage />
+            </AnalyticsSuspense>
+          }
+        />
+
+
+        <Route
+          path="/services"
+          element={
+            <AnalyticsSuspense
+              fallback={
+                <div role="status" className="flex min-h-screen items-center justify-center bg-background text-muted">
+                  Loading services...
+                </div>
+              }
+            >
+              <Marketplace />
+            </AnalyticsSuspense>
+          }
+        />
 
         {/* Unified authentication */}
         <Route path="/login" element={<AuthRoute />} />
@@ -261,4 +293,12 @@ export default App
 
 const Analytics = lazyAnalytics(
   () => import('./pages/provider/Analytics')
+)
+
+const LandingPage = lazyAnalytics(
+  () => import('./pages/public/LandingPage')
+)
+
+const Marketplace = lazyAnalytics(
+  () => import('./pages/public/Marketplace')
 )

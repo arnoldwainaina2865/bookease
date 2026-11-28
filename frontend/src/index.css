@@ -263,3 +263,10 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Public website navigation */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
